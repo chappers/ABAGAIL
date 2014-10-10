@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="Python" name="Python">
+      <configuration sdkName="Jython 2.5.3 (~/jython2.5.3/bin/jython)" />
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/dist" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/func" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/image" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/logs" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/opt" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/rl" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/shared" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/util" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jython" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bin" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/bin/dist" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/bin/func" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/bin/opt" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/bin/rl" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/bin/shared" type="java-resource" />
+      <excludeFolder url="file://$MODULE_DIR$/jython/data" />
+      <excludeFolder url="file://$MODULE_DIR$/jython/image" />
+      <excludeFolder url="file://$MODULE_DIR$/jython/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/src/data" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="RUNTIME" name="Jython 2.5.3 (~/jython2.5.3/bin/jython) interpreter library" level="application" />
+  </component>
+</module>
+

@@ -6,7 +6,6 @@ import opt.example.*;
 import opt.ga.*;
 import shared.*;
 import func.nn.backprop.*;
-import shared.reader.ArffDataSetReader;
 
 import java.util.*;
 import java.io.*;
@@ -22,10 +21,8 @@ import java.text.*;
  */
 public class AbaloneTest {
     private static Instance[] instances = initializeInstances();
-//Ramy's NN parameters from previous assignment. iterations 40000 learning rate .01 momentum .05 -H a,o meaning one hidden layer for a' = (attribs + classes) / 2,
-//'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
-     //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
-    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 2, trainingIterations = 1000; //for vote
+
+    private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
@@ -112,7 +109,7 @@ public class AbaloneTest {
         double[][][] attributes = new double[4177][][];
 
         try {
-            ArffDataSetReader br = new ArffDataSetReader(String("src/opt/test/vote.arff"));
+            BufferedReader br = new BufferedReader(new FileReader(new File("src/opt/test/abalone.txt")));
 
             for(int i = 0; i < attributes.length; i++) {
                 Scanner scan = new Scanner(br.readLine());

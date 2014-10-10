@@ -1,5 +1,14 @@
 package opt.test;
 
+import shared.DataSet;
+import shared.DataSetDescription;
+import shared.filt.DiscreteToBinaryFilter;
+import shared.reader.ArffDataSetReader;
+import shared.reader.DataSetReader;
+import shared.filt.ContinuousToDiscreteFilter;
+import shared.filt.LabelSplitFilter;
+import shared.reader.DataSetLabelBinarySeperator;
+
 import func.nn.backprop.BackPropagationNetwork;
 import func.nn.backprop.BackPropagationNetworkFactory;
 import opt.OptimizationAlgorithm;
@@ -13,6 +22,7 @@ import shared.Instance;
 import shared.SumOfSquaresError;
 import shared.reader.ArffDataSetReader;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Scanner;
 
@@ -29,7 +39,7 @@ public class VoteTest {
 //Ramy's NN parameters from previous assignment. iterations 40000 learning rate .01 momentum .05 -H a,o meaning one hidden layer for a' = (attribs + classes) / 2,
 //'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
      //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
-    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 2, trainingIterations = 1000; //for vote
+    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, trainingIterations = 100; //for vote
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
@@ -112,39 +122,39 @@ public class VoteTest {
     }
 
     private static Instance[] initializeInstances() {
-
-        double[][][] attributes = new double[4177][][];
+        double[][][] attributes = null;
 
         try {
-            ArffDataSetReader br = new ArffDataSetReader(String("src/opt/test/vote.arff"));
-
-            DataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() + "/src/shared/test/vote.arff");
+            ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/src/opt/test/vote.arff");
             // read in the raw data
             DataSet ds = dsr.read();
+
             // split out the label
             LabelSplitFilter lsf = new LabelSplitFilter();
             lsf.filter(ds);
-            ContinuousToDiscreteFilter ctdf = new ContinuousToDiscreteFilter(10);
+            DiscreteToBinaryFilter ctdf = new DiscreteToBinaryFilter();
             ctdf.filter(ds);
             DataSetLabelBinarySeperator.seperateLabels(ds);
             System.out.println(ds);
             System.out.println(new DataSetDescription(ds));
+            int numInstances = ds.size();
+            int numAttributes = ds.getLabelDataSet().getDescription().getAttributeCount();
+            attributes = new double[numInstances][][];
 
-
-    /*        for(int i = 0; i < attributes.length; i++) {
-                Scanner scan = new Scanner(br.readLine());
-                scan.useDelimiter(",");
+            for(int i = 0; i < attributes.length; i++) {
+              //  Scanner scan = new Scanner(br.readLine());
+               // scan.useDelimiter(",");
 
                 attributes[i] = new double[2][];
-                attributes[i][0] = new double[7]; // 7 attributes
+                attributes[i][0] = new double[numAttributes]; // 7 attributes
                 attributes[i][1] = new double[1];
 
-                for(int j = 0; j < 7; j++)
-                    attributes[i][0][j] = Double.parseDouble(scan.next());
+                for(int j = 0; j < numAttributes; j++)
+                    attributes[i][0][j] =  ds.get(i).getContinuous(j);//Double.parseDouble(scan.next());
 
-                attributes[i][1][0] = Double.parseDouble(scan.next());
+                attributes[i][1][0] = ds.get(i).getContinuous();// Double.parseDouble(scan.next());
             }
-            */
+
         }
         catch(Exception e) {
             e.printStackTrace();
