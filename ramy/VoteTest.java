@@ -19,6 +19,7 @@ import shared.SumOfSquaresError;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.DoubleSummaryStatistics;
 
 /**
  * Implementation of randomized hill climbing, simulated annealing, and genetic algorithm to
@@ -95,6 +96,7 @@ public class VoteTest {
                         + df.format(correct/(correct+incorrect)*100) + "%\nTraining time: " + df.format(trainingTime)
                         + " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
         }
+        evalTestError();
 
         System.out.println(results);
     }
@@ -120,10 +122,16 @@ public class VoteTest {
     }
     private static void evalTestError()
     {
+        int nn = 0;
+        int correct =0, wrong = 0;
         for (int i = 0; i < testInstances.length; i++)
         {
-            //Instance output = testInstances[i].getLabel()
+             double truth  = Double.parseDouble( testInstances[i].getLabel().toString());
+            networks[nn].setInputValues(testInstances[i].getData());
+            double predicted = Double.parseDouble(networks[nn].getOutputValues().toString());
+            double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
         }
+        System.out.println("test Error is " + correct + "/" + wrong + " : " + correct /((correct+wrong)*100) );
     }
     private static Instance[] initializeInstances() {
         double[][][] attributes = null;
