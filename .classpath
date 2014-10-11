@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-    <classpathentry kind="src" path="src"/>
-    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-    <classpathentry kind="output" path="bin"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="jython"/>
+	<classpathentry kind="src" path="bin"/>
+	<classpathentry kind="src" path="bin/dist"/>
+	<classpathentry kind="src" path="bin/func"/>
+	<classpathentry kind="src" path="bin/opt"/>
+	<classpathentry kind="src" path="bin/rl"/>
+	<classpathentry kind="src" path="bin/shared"/>
+	<classpathentry kind="src" path="ramy"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="ABAGAIL.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Jython 2.5.3 (~/jython2.5.3/bin/jython) interpreter library"/>
+	<classpathentry kind="output" path="bin/exps"/>
 </classpath>

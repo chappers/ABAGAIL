@@ -45,9 +45,10 @@ Commandline parameter(s):
 
 
 print "About to run Vote Test. Yay."
-"""
- vt = VoteTest();
-"""
+
+vt = VoteTest()
+vt.doIt()
+
 N=60
 T=N/10
 fill = [2] * N
