@@ -1,9 +1,8 @@
 import shared.DataSet;
 import shared.DataSetDescription;
 import shared.filt.DiscreteToBinaryFilter;
+import shared.filt.TestTrainSplitFilter;
 import shared.reader.ArffDataSetReader;
-import shared.reader.DataSetReader;
-import shared.filt.ContinuousToDiscreteFilter;
 import shared.filt.LabelSplitFilter;
 import shared.reader.DataSetLabelBinarySeperator;
 
@@ -14,15 +13,12 @@ import opt.RandomizedHillClimbing;
 import opt.SimulatedAnnealing;
 import opt.example.NeuralNetworkOptimizationProblem;
 import opt.ga.StandardGeneticAlgorithm;
-import shared.DataSet;
 import shared.ErrorMeasure;
 import shared.Instance;
 import shared.SumOfSquaresError;
-import shared.reader.ArffDataSetReader;
 
 import java.io.File;
 import java.text.DecimalFormat;
-import java.util.Scanner;
 
 /**
  * Implementation of randomized hill climbing, simulated annealing, and genetic algorithm to
@@ -33,7 +29,7 @@ import java.util.Scanner;
  * @version 1.0
  */
 public class VoteTest {
-    private static Instance[] instances = initializeInstances();
+  //  private static Instance[] allInstances = initializeInstances();
 //Ramy's NN parameters from previous assignment. iterations 40000 learning rate .01 momentum .05 -H a,o meaning one hidden layer for a' = (attribs + classes) / 2,
 //'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
      //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
@@ -41,8 +37,9 @@ public class VoteTest {
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
-
-    private static DataSet set = new DataSet(instances);
+    private static Instance[] trainingInstances = null;
+    private static Instance[] testInstances = null;
+    private static DataSet set = null;
 
     private static BackPropagationNetwork networks[] = new BackPropagationNetwork[3];
     private static NeuralNetworkOptimizationProblem[] nnop = new NeuralNetworkOptimizationProblem[3];
@@ -53,7 +50,9 @@ public class VoteTest {
 
     private static DecimalFormat df = new DecimalFormat("0.000");
 
-    public static void main(String[] args) {
+    public static void doIt() {
+        trainingInstances = initializeInstances();
+        set = new DataSet(trainingInstances);
         for(int i = 0; i < oa.length; i++) {
             networks[i] = factory.createClassificationNetwork(
                 new int[] {inputLayer, hiddenLayer, outputLayer});
@@ -76,11 +75,12 @@ public class VoteTest {
 
             double predicted, actual;
             start = System.nanoTime();
-            for(int j = 0; j < instances.length; j++) {
-                networks[i].setInputValues(instances[j].getData());
+
+            for(int j = 0; j < trainingInstances.length; j++) {
+                networks[i].setInputValues(trainingInstances[j].getData());
                 networks[i].run();
 
-                predicted = Double.parseDouble(instances[j].getLabel().toString());
+                predicted = Double.parseDouble(trainingInstances[j].getLabel().toString());
                 actual = Double.parseDouble(networks[i].getOutputValues().toString());
 
                 double trash = Math.abs(predicted - actual) < 0.5 ? correct++ : incorrect++;
@@ -106,11 +106,11 @@ public class VoteTest {
             oa.train();
 
             double error = 0;
-            for(int j = 0; j < instances.length; j++) {
-                network.setInputValues(instances[j].getData());
+            for(int j = 0; j < trainingInstances.length; j++) {
+                network.setInputValues(trainingInstances[j].getData());
                 network.run();
 
-                Instance output = instances[j].getLabel(), example = new Instance(network.getOutputValues());
+                Instance output = trainingInstances[j].getLabel(), example = new Instance(network.getOutputValues());
                 example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
                 error += measure.value(output, example);
             }
@@ -118,25 +118,37 @@ public class VoteTest {
             System.out.println(df.format(error));
         }
     }
-
+    private static void evalTestError()
+    {
+        for (int i = 0; i < testInstances.length; i++)
+        {
+            //Instance output = testInstances[i].getLabel()
+        }
+    }
     private static Instance[] initializeInstances() {
         double[][][] attributes = null;
 
         try {
             ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
             // read in the raw data
-            DataSet ds = dsr.read();
+            DataSet fullDataSet = dsr.read();
+
+            int pct = 10;
+            TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
+            splitter.filter(fullDataSet);
+            DataSet trainingSet = splitter.getTrainingSet();
+            DataSet testSet  = splitter.getTestingSet();
 
             // split out the label
             LabelSplitFilter lsf = new LabelSplitFilter();
-            lsf.filter(ds);
+            lsf.filter(trainingSet);
             DiscreteToBinaryFilter ctdf = new DiscreteToBinaryFilter();
-            ctdf.filter(ds);
-            DataSetLabelBinarySeperator.seperateLabels(ds);
-            System.out.println(ds);
-            System.out.println(new DataSetDescription(ds));
-            int numInstances = ds.size();
-            int numAttributes = ds.getLabelDataSet().getDescription().getAttributeCount();
+            ctdf.filter(trainingSet);
+            DataSetLabelBinarySeperator.seperateLabels(trainingSet);
+            System.out.println(trainingSet);
+            System.out.println(new DataSetDescription(trainingSet));
+            int numInstances = trainingSet.size();
+            int numAttributes = trainingSet.getLabelDataSet().getDescription().getAttributeCount();
             attributes = new double[numInstances][][];
 
             for(int i = 0; i < attributes.length; i++) {
@@ -148,9 +160,9 @@ public class VoteTest {
                 attributes[i][1] = new double[1];
 
                 for(int j = 0; j < numAttributes; j++)
-                    attributes[i][0][j] =  ds.get(i).getContinuous(j);//Double.parseDouble(scan.next());
+                    attributes[i][0][j] =  trainingSet.get(i).getContinuous(j);//Double.parseDouble(scan.next());
 
-                attributes[i][1][0] = ds.get(i).getContinuous();// Double.parseDouble(scan.next());
+                attributes[i][1][0] = trainingSet.get(i).getContinuous();// Double.parseDouble(scan.next());
             }
 
         }
@@ -163,9 +175,19 @@ public class VoteTest {
         for(int i = 0; i < instances.length; i++) {
             instances[i] = new Instance(attributes[i][0]);
             // classifications range from 0 to 30; split into 0 - 14 and 15 - 30
-            instances[i].setLabel(new Instance(attributes[i][1][0] < 15 ? 0 : 1));
+            //TODO: what  is this? Needs a fix.
+            int label =attributes[i][1][0] < .5 ? 0 : 1 ;
+            instances[i].setLabel( new Instance(label));
         }
 
         return instances;
     }
+
+    public static void main(String[] args)
+    {
+        System.out.print("Hello World. Main called here. ");
+        doIt();
+
+    }
+
 }
