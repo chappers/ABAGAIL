@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/bin/exps"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$">
+		<excludeFolder url="file://$MODULE_DIR$/bin"/>
+		<excludeFolder url="file://$MODULE_DIR$/jython/data"/>
+		<excludeFolder url="file://$MODULE_DIR$/jython/image"/>
+		<excludeFolder url="file://$MODULE_DIR$/jython/logs"/>
+		<excludeFolder url="file://$MODULE_DIR$/src/data"/>
+	</contentEntry>
+	<lib name="ABAGAIL.jar" scope="COMPILE">
+		<relative-module-cls project-related="jar://$PROJECT_DIR$/ABAGAIL/ABAGAIL.jar!/"/>
+	</lib>
+</component>
