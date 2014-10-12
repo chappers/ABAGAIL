@@ -1,11 +1,3 @@
-import shared.DataSet;
-import shared.DataSetDescription;
-import shared.filt.DiscreteToBinaryFilter;
-import shared.filt.TestTrainSplitFilter;
-import shared.reader.ArffDataSetReader;
-import shared.filt.LabelSplitFilter;
-import shared.reader.DataSetLabelBinarySeperator;
-
 import func.nn.backprop.BackPropagationNetwork;
 import func.nn.backprop.BackPropagationNetworkFactory;
 import opt.OptimizationAlgorithm;
@@ -13,13 +5,24 @@ import opt.RandomizedHillClimbing;
 import opt.SimulatedAnnealing;
 import opt.example.NeuralNetworkOptimizationProblem;
 import opt.ga.StandardGeneticAlgorithm;
+import shared.DataSet;
 import shared.ErrorMeasure;
 import shared.Instance;
 import shared.SumOfSquaresError;
+import shared.filt.DiscreteToBinaryFilter;
+import shared.filt.LabelSplitFilter;
+import shared.filt.RandomOrderFilter;
+import shared.filt.TestTrainSplitFilter;
+import shared.reader.ArffDataSetReader;
+import shared.reader.DataSetLabelBinarySeperator;
 
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
+
+import com.jmatio.types.MLDouble;
+import com.jmatio.io.MatFileWriter;
+
 
 class ErrorCount
 {
@@ -79,17 +82,30 @@ public class VoteTest {
     private static String results = "";
 
     private static DecimalFormat df = new DecimalFormat("0.000");
-
+    //TODO: do i need to pass in rows and columns?
+    private static MatlabWriter matlabWriter = null;
+    private static int runNumber;
     public static void doIt() {
+        runNumber=0;
         DataSet fullSet= loadData();
-        int pct = 10;
+        int pct = 100;
+
+
+
+
+        RandomOrderFilter randomizer = new RandomOrderFilter();
+        randomizer.filter(fullSet);
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
         splitter.filter(fullSet);
         DataSet trainingSet = splitter.getTrainingSet();
         DataSet testSet  = splitter.getTestingSet();
 
         trainingInstances = initializeInstances(trainingSet);
-        testInstances = initializeInstances(testSet);
+        if( pct == 100)
+          {  testInstances = trainingInstances;}
+        else
+        {  testInstances = initializeInstances(testSet);}
+
         //set = new DataSet(trainingInstances);
 
         for(int i = 0; i < oa.length; i++) {
@@ -101,50 +117,60 @@ public class VoteTest {
         oa[0] = new RandomizedHillClimbing(nnop[0]);
         oa[1] = new SimulatedAnnealing(1E11, .95, nnop[1]);
         oa[2] = new StandardGeneticAlgorithm(200, 100, 10, nnop[2]);
-
+        double trainingError[] = new double [oa.length];
         for(int i = 0; i < oa.length; i++) {
             double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
-            train(oa[i], networks[i], oaNames[i]); //trainer.train();
+             trainingError[i] = train(oa[i], networks[i], oaNames[i]); //trainer.train();
             end = System.nanoTime();
             trainingTime = end - start;
             trainingTime /= Math.pow(10,9);
 
-            Instance optimalInstance = oa[i].getOptimal();
-            networks[i].setWeights(optimalInstance.getData());
-
-            double predicted, actual;
-            start = System.nanoTime();
-
-            for(int j = 0; j < trainingInstances.length; j++) {
-                networks[i].setInputValues(trainingInstances[j].getData());
-                networks[i].run();
-
-                predicted = Double.parseDouble(trainingInstances[j].getLabel().toString());
-                actual = Double.parseDouble(networks[i].getOutputValues().toString());
-
-                double trash = Math.abs(predicted - actual) < 0.5 ? correct++ : incorrect++;
-
-            }
-            end = System.nanoTime();
-            testingTime = end - start;
-            testingTime /= Math.pow(10,9);
-
-            results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
-                        "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
-                        + df.format(correct/(correct+incorrect)*100) + "%\nTraining time: " + df.format(trainingTime)
-                        + " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+            evalTrainingError(i, trainingTime);
         }
         evalTestError();
 
         System.out.println(results);
     }
 
-    private static void train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
-        System.out.println("\nError results for " + oaName + "\n---------------------------");
+    private static void evalTrainingError(int i, double trainingTime)
+    {
+        double correct=0;
+        double incorrect=0;
+        double start;
+        double end;
+        double testingTime;
+        Instance optimalInstance = oa[i].getOptimal();
+        networks[i].setWeights(optimalInstance.getData());
+
+        double predicted, actual;
+        start = System.nanoTime();
+
+        for(int j = 0; j < trainingInstances.length; j++) {
+            networks[i].setInputValues(trainingInstances[j].getData());
+            networks[i].run();
+
+            predicted = Double.parseDouble(trainingInstances[j].getLabel().toString());
+            actual = Double.parseDouble(networks[i].getOutputValues().toString());
+
+            double trash = Math.abs(predicted - actual) < 0.5 ? correct++ : incorrect++;
+
+        }
+        end = System.nanoTime();
+        testingTime = end - start;
+        testingTime /= Math.pow(10,9);
+        matlabWriter.addValue(correct/incorrect, oaNames[i]+"_trainingError", runNumber);
+        results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
+                    "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
+                    + df.format(correct/(correct+incorrect)*100) + "%\nTraining time: " + df.format(trainingTime)
+                    + " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+    }
+
+    private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
+  //      System.out.println("\nError results for " + oaName + "\n---------------------------");
 
         for(int i = 0; i < trainingIterations; i++) {
             oa.train();
-
+        }
             double error = 0;
             for(int j = 0; j < trainingInstances.length; j++) {
                 network.setInputValues(trainingInstances[j].getData());
@@ -154,13 +180,20 @@ public class VoteTest {
                 example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
                 error += measure.value(output, example);
             }
-
-            System.out.println(df.format(error));
-        }
+        //System.out.println(df.format(error));
+        return error;
     }
-    private static Vector<ErrorCount> evalTestError()
+
+//    private static Vector<ErrorCount> evalTrainingError()
+//    {
+//
+//    }
+
+
+    private  static  Vector<ErrorCount> evalTestError()
     {
-        int nn = 0;
+
+
         double correct =0, wrong = 0;
         Vector<ErrorCount> results = new Vector<ErrorCount>(oa.length);
         for (int i = 0; i < oa.length; i++)
@@ -173,8 +206,10 @@ public class VoteTest {
                 double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
             }
             results.add(i, new ErrorCount(correct,wrong));
+            matlabWriter.addValue(correct/wrong, oaNames[i] + "_testError",runNumber);
             System.out.println("test Error is " + correct + "/" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
+        runNumber++;
         return results;
     }
     private static DataSet loadData()
@@ -200,8 +235,8 @@ public class VoteTest {
             DiscreteToBinaryFilter ctdf = new DiscreteToBinaryFilter();
             ctdf.filter(set);
             DataSetLabelBinarySeperator.seperateLabels(set);
-            System.out.println(set);
-            System.out.println(new DataSetDescription(set));
+            //System.out.println(set);
+            //System.out.println(new DataSetDescription(set));
             int numInstances = set.size();
             int numAttributes = set.getLabelDataSet().getDescription().getAttributeCount();
             attributes = new double[numInstances][][];
@@ -241,8 +276,12 @@ public class VoteTest {
     public static void main(String[] args)
     {
         System.out.print("Hello World. Main called here. ");
-        doIt();
+        int totalRuns =10;
+        for (int i = 0; i < totalRuns; i++) {
+            doIt();
+        }
 
+        matlabWriter.write();
     }
 
 }

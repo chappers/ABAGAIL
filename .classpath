@@ -12,5 +12,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="ABAGAIL.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Jython 2.5.3 (~/jython2.5.3/bin/jython) interpreter library"/>
+	<classpathentry kind="lib" path="/Users/Ramy/work/Georgia Tech/Machine Learning CS 7641/Common/JMatIO_071005/lib/jamtio.jar"/>
 	<classpathentry kind="output" path="bin/exps"/>
 </classpath>
