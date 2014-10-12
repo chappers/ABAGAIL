@@ -83,16 +83,28 @@ public class VoteTest {
 
     private static DecimalFormat df = new DecimalFormat("0.000");
     //TODO: do i need to pass in rows and columns?
+
+    private static int runNumber=0;
+    private static int totalRuns=0;
+    private static int numPercentages=1;
     private static MatlabWriter matlabWriter = null;
-    private static int runNumber;
     public static void doIt() {
-        runNumber=0;
+
+
         DataSet fullSet= loadData();
-        int pct = 100;
+        int pctBegin = 10;
+        int incr = (int) Math.ceil((100 - pctBegin) / (numPercentages -1));
 
+        for (int i = pctBegin; i <= 100; i+=incr)
+        {
+            int pct = Math.min(100, i);
+            sampleTrainingPercentage(fullSet, pct);
+        }
 
+        runNumber++;
+    }
 
-
+    private static void sampleTrainingPercentage(DataSet fullSet, int pct) {
         RandomOrderFilter randomizer = new RandomOrderFilter();
         randomizer.filter(fullSet);
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
@@ -125,14 +137,14 @@ public class VoteTest {
             trainingTime = end - start;
             trainingTime /= Math.pow(10,9);
 
-            evalTrainingError(i, trainingTime);
+            evalTrainingError(i);
         }
         evalTestError();
 
         System.out.println(results);
     }
 
-    private static void evalTrainingError(int i, double trainingTime)
+    private static void evalTrainingError(int i)
     {
         double correct=0;
         double incorrect=0;
@@ -161,8 +173,8 @@ public class VoteTest {
         matlabWriter.addValue(correct/incorrect, oaNames[i]+"_trainingError", runNumber);
         results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
                     "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
-                    + df.format(correct/(correct+incorrect)*100) + "%\nTraining time: " + df.format(trainingTime)
-                    + " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+                    + df.format(correct/(correct+incorrect)*100);// + "%\nTraining time: " + df.format(trainingTime)
+                    //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
     }
 
     private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
@@ -209,7 +221,7 @@ public class VoteTest {
             matlabWriter.addValue(correct/wrong, oaNames[i] + "_testError",runNumber);
             System.out.println("test Error is " + correct + "/" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
-        runNumber++;
+
         return results;
     }
     private static DataSet loadData()
@@ -276,7 +288,8 @@ public class VoteTest {
     public static void main(String[] args)
     {
         System.out.print("Hello World. Main called here. ");
-        int totalRuns =10;
+        totalRuns =3; numPercentages= 3;
+        matlabWriter = new MatlabWriter("vote.mat", numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
             doIt();
         }

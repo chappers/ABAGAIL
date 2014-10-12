@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import com.jmatio.types.MLDouble;
 import com.jmatio.io.MatFileWriter;
+import com.sun.xml.internal.xsom.impl.scd.Iterators;
 
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
@@ -55,13 +56,17 @@ public class MatlabWriter {
         for( HashMap.Entry< String, ArrayList<Vector<Double> > > cursor : map.entrySet() )
         {
             int r, c;
-            r = cursor.getValue().size();
-            for ( Vector<Double>  vec : cursor.getValue() ) {
-                c = vec.size();
 
-                MLDouble tmp = new MLDouble(cursor.getKey(), vec.toArray(new Double[r]), 1);
+            r = cursor.getValue().size();
+            c = cursor.getValue().get(0).size();
+            //for ( Vector<Double>  vec : cursor.getValue() ) {
+
+
+                Object[] foo;
+                foo = cursor.getValue().toArray();
+                MLDouble tmp = new MLDouble(cursor.getKey(), (Double[]) foo,r);
                 list.add(tmp);
-            }
+        //    }
         }
         return list;
        /*
