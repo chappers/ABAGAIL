@@ -19,7 +19,35 @@ import shared.SumOfSquaresError;
 
 import java.io.File;
 import java.text.DecimalFormat;
-import java.util.DoubleSummaryStatistics;
+import java.util.Vector;
+
+class ErrorCount
+{
+    private double correct = 0;
+    private double wrong = 0;
+
+    ErrorCount(double right, double notRight)
+    {
+        setCorrect(right);
+        setWrong(notRight);
+    }
+
+    public double getCorrect() {
+        return correct;
+    }
+
+    public void setCorrect(double correct) {
+        this.correct = correct;
+    }
+
+    public double getWrong() {
+        return wrong;
+    }
+
+    public void setWrong(double wrong) {
+        this.wrong = wrong;
+    }
+}
 
 /**
  * Implementation of randomized hill climbing, simulated annealing, and genetic algorithm to
@@ -29,6 +57,7 @@ import java.util.DoubleSummaryStatistics;
  * @author Hannah Lau
  * @version 1.0
  */
+
 public class VoteTest {
   //  private static Instance[] allInstances = initializeInstances();
 //Ramy's NN parameters from previous assignment. iterations 40000 learning rate .01 momentum .05 -H a,o meaning one hidden layer for a' = (attribs + classes) / 2,
@@ -40,7 +69,7 @@ public class VoteTest {
     private static ErrorMeasure measure = new SumOfSquaresError();
     private static Instance[] trainingInstances = null;
     private static Instance[] testInstances = null;
-    private static DataSet set = null;
+    //private static DataSet set = null;
 
     private static BackPropagationNetwork networks[] = new BackPropagationNetwork[3];
     private static NeuralNetworkOptimizationProblem[] nnop = new NeuralNetworkOptimizationProblem[3];
@@ -52,12 +81,21 @@ public class VoteTest {
     private static DecimalFormat df = new DecimalFormat("0.000");
 
     public static void doIt() {
-        trainingInstances = initializeInstances();
-        set = new DataSet(trainingInstances);
+        DataSet fullSet= loadData();
+        int pct = 10;
+        TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
+        splitter.filter(fullSet);
+        DataSet trainingSet = splitter.getTrainingSet();
+        DataSet testSet  = splitter.getTestingSet();
+
+        trainingInstances = initializeInstances(trainingSet);
+        testInstances = initializeInstances(testSet);
+        //set = new DataSet(trainingInstances);
+
         for(int i = 0; i < oa.length; i++) {
             networks[i] = factory.createClassificationNetwork(
                 new int[] {inputLayer, hiddenLayer, outputLayer});
-            nnop[i] = new NeuralNetworkOptimizationProblem(set, networks[i], measure);
+            nnop[i] = new NeuralNetworkOptimizationProblem(trainingSet, networks[i], measure);
         }
 
         oa[0] = new RandomizedHillClimbing(nnop[0]);
@@ -120,43 +158,52 @@ public class VoteTest {
             System.out.println(df.format(error));
         }
     }
-    private static void evalTestError()
+    private static Vector<ErrorCount> evalTestError()
     {
         int nn = 0;
-        int correct =0, wrong = 0;
-        for (int i = 0; i < testInstances.length; i++)
+        double correct =0, wrong = 0;
+        Vector<ErrorCount> results = new Vector<ErrorCount>(oa.length);
+        for (int i = 0; i < oa.length; i++)
         {
-             double truth  = Double.parseDouble( testInstances[i].getLabel().toString());
-            networks[nn].setInputValues(testInstances[i].getData());
-            double predicted = Double.parseDouble(networks[nn].getOutputValues().toString());
-            double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
+            for (int j = 0; j < testInstances.length;j++)
+            {
+                double truth  = Double.parseDouble( testInstances[j].getLabel().toString());
+                networks[i].setInputValues(testInstances[j].getData());
+                double predicted = Double.parseDouble(networks[i].getOutputValues().toString());
+                double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
+            }
+            results.add(i, new ErrorCount(correct,wrong));
+            System.out.println("test Error is " + correct + "/" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
-        System.out.println("test Error is " + correct + "/" + wrong + " : " + correct /((correct+wrong)*100) );
+        return results;
     }
-    private static Instance[] initializeInstances() {
+    private static DataSet loadData()
+    {
+        ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
+        // read in the raw data
+        DataSet fullDataSet = null;
+        try {
+            fullDataSet = dsr.read();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return  fullDataSet;
+    }
+    private static Instance[] initializeInstances(DataSet set) {
         double[][][] attributes = null;
 
         try {
-            ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
-            // read in the raw data
-            DataSet fullDataSet = dsr.read();
-
-            int pct = 10;
-            TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
-            splitter.filter(fullDataSet);
-            DataSet trainingSet = splitter.getTrainingSet();
-            DataSet testSet  = splitter.getTestingSet();
 
             // split out the label
             LabelSplitFilter lsf = new LabelSplitFilter();
-            lsf.filter(trainingSet);
+            lsf.filter(set);
             DiscreteToBinaryFilter ctdf = new DiscreteToBinaryFilter();
-            ctdf.filter(trainingSet);
-            DataSetLabelBinarySeperator.seperateLabels(trainingSet);
-            System.out.println(trainingSet);
-            System.out.println(new DataSetDescription(trainingSet));
-            int numInstances = trainingSet.size();
-            int numAttributes = trainingSet.getLabelDataSet().getDescription().getAttributeCount();
+            ctdf.filter(set);
+            DataSetLabelBinarySeperator.seperateLabels(set);
+            System.out.println(set);
+            System.out.println(new DataSetDescription(set));
+            int numInstances = set.size();
+            int numAttributes = set.getLabelDataSet().getDescription().getAttributeCount();
             attributes = new double[numInstances][][];
 
             for(int i = 0; i < attributes.length; i++) {
@@ -168,9 +215,9 @@ public class VoteTest {
                 attributes[i][1] = new double[1];
 
                 for(int j = 0; j < numAttributes; j++)
-                    attributes[i][0][j] =  trainingSet.get(i).getContinuous(j);//Double.parseDouble(scan.next());
+                    attributes[i][0][j] =  set.get(i).getContinuous(j);//Double.parseDouble(scan.next());
 
-                attributes[i][1][0] = trainingSet.get(i).getContinuous();// Double.parseDouble(scan.next());
+                attributes[i][1][0] = set.get(i).getContinuous();// Double.parseDouble(scan.next());
             }
 
         }
