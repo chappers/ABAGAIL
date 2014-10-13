@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import com.jmatio.types.MLDouble;
+
 import com.jmatio.io.MatFileWriter;
 import com.sun.xml.internal.xsom.impl.scd.Iterators;
 
@@ -49,26 +50,34 @@ public class MatlabWriter {
 
     }
 
-    public List<MLDouble> makeList()
-    {
+    public List<MLDouble> makeList() {
         //for (HashMap.Entry<String, Classifier> cursor : classifiers.entrySet())
         List<MLDouble> list = new ArrayList<MLDouble>();
-        for( HashMap.Entry< String, ArrayList<Vector<Double> > > cursor : map.entrySet() )
-        {
+        for (HashMap.Entry<String, ArrayList<Vector<Double>>> cursor : map.entrySet()) {
             int r, c;
 
             r = cursor.getValue().size();
             c = cursor.getValue().get(0).size();
-            //for ( Vector<Double>  vec : cursor.getValue() ) {
+            List<Double> allValues = new ArrayList<>();
 
+            for (Vector<Double> vec : cursor.getValue()) {
 
-                Object[] foo;
-                foo = cursor.getValue().toArray();
-                MLDouble tmp = new MLDouble(cursor.getKey(), (Double[]) foo,r);
-                list.add(tmp);
-        //    }
+                allValues.addAll(vec);
+            }
+            Vector<Double> theValues = new Vector<Double>();
+            theValues.addAll(allValues);
+            Double[] foo;
+            int numel = r * c;
+            foo = allValues.toArray(new Double[r * c]);
+            int man = allValues.size();
+            MLDouble tmp = new MLDouble(cursor.getKey(), allValues.toArray( new Double[allValues.size()]), r);
+            //MLDouble tmp = new MLDouble(cursor.getKey(), theValues.toArray( new Double[theValues.size()]), r);
+
+           list.add(tmp);
         }
+
         return list;
+    }
        /*
         MLDouble TestMLDouble = new MLDouble("testErrorRMS", TestErrorVec.toArray(new Double[TestErrorVec.size()]), 1);
 
@@ -83,7 +92,7 @@ public class MatlabWriter {
         list.add(TestMLDoublePct);
         */
 
-    }
+
     public  List<MLDouble> test(int runNumber) throws Exception{
 
         /*

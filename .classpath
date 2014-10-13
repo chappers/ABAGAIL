@@ -9,9 +9,14 @@
 	<classpathentry kind="src" path="bin/rl"/>
 	<classpathentry kind="src" path="bin/shared"/>
 	<classpathentry kind="src" path="ramy"/>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="ramy/src"/>
+	<classpathentry kind="src" path="src/com/jmatio"/>
+	<classpathentry kind="src" path="/ABAGAIL/"/>
+	<classpathentry kind="src" path="/ABAGAIL/jmatio"/>
+	<classpathentry kind="src" path="/ABAGAIL/jmatio/common"/>
+	<classpathentry kind="src" path="/ABAGAIL/jmatio/io"/>
+	<classpathentry kind="src" path="/ABAGAIL/jmatio/types"/>
 	<classpathentry kind="lib" path="ABAGAIL.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Jython 2.5.3 (~/jython2.5.3/bin/jython) interpreter library"/>
-	<classpathentry kind="lib" path="/Users/Ramy/work/Georgia Tech/Machine Learning CS 7641/Common/JMatIO_071005/lib/jamtio.jar"/>
 	<classpathentry kind="output" path="bin/exps"/>
 </classpath>
