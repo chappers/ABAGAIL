@@ -170,7 +170,7 @@ public class VoteTest {
         testingTime = end - start;
         double pctError = new PercentError(correct, incorrect).invoke();
         testingTime /= Math.pow(10,9);
-        matlabWriter.addValue(correct/incorrect, oaNames[i]+"_trainingError", runNumber);
+        matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
         results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
                     "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
                     + df.format(pctError);// + "%\nTraining time: " + df.format(trainingTime)
@@ -220,7 +220,7 @@ public class VoteTest {
             //results.add(i, new ErrorCount(correct,wrong));
             double pctError = new PercentError(correct,wrong).invoke();
             matlabWriter.addValue(pctError, oaNames[i] + "_testError",runNumber);
-            System.out.println("test Error is " + correct + "/" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
+            System.out.println("test Error is " + correct + "vs" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
 
         return results;
