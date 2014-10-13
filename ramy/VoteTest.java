@@ -65,7 +65,7 @@ public class VoteTest {
 //'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
      //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
   //TODO: the old one had TWO output nodes.
-    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, trainingIterations = 100; //for vote
+    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, trainingIterations = 1000; //for vote
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
@@ -97,6 +97,7 @@ public class VoteTest {
         for (int i = pctBegin; i <= 100; i+=incr)
         {
             int pct = Math.min(100, i);
+            System.out.println("\n************  " +pct+ "% training\n");
             sampleTrainingPercentage(fullSet, pct);
         }
 
@@ -140,7 +141,7 @@ public class VoteTest {
         }
         evalTestError();
 
-        System.out.println(results);
+
     }
 
     private static void evalTrainingError(int i)
@@ -171,15 +172,16 @@ public class VoteTest {
         double pctError = new PercentError(correct, incorrect).invoke();
         testingTime /= Math.pow(10,9);
         matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
-        results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
+        System.out.println("\n---------------------------\nError results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
+        results +=  "Correctly classified " + correct + " instances." +
                     "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
-                    + df.format(pctError);// + "%\nTraining time: " + df.format(trainingTime)
+                    + df.format(100 - pctError);// + "%\nTraining time: " + df.format(trainingTime)
                     //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+        System.out.println(results);
+        results = "";
     }
 
     private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
-        System.out.println("\nError results for " + oaName + "\n---------------------------");
-
         for(int i = 0; i < trainingIterations; i++) {
             oa.train();
         }
@@ -192,7 +194,7 @@ public class VoteTest {
                 example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
                 error += measure.value(output, example);
             }
-        System.out.println(df.format(error));
+       // System.out.println(df.format(error));
         return error;
     }
 
@@ -220,6 +222,7 @@ public class VoteTest {
             //results.add(i, new ErrorCount(correct,wrong));
             double pctError = new PercentError(correct,wrong).invoke();
             matlabWriter.addValue(pctError, oaNames[i] + "_testError",runNumber);
+            System.out.println("\n---------------------------\nTest results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
             System.out.println("test Error is " + correct + "vs" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
 
@@ -227,7 +230,9 @@ public class VoteTest {
     }
     private static DataSet loadData()
     {
-        ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
+       // ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
+        String file = new String("vote.arff");
+        ArffDataSetReader dsr = new ArffDataSetReader(new File("") + file);
         // read in the raw data
         DataSet fullDataSet = null;
         try {
@@ -288,10 +293,21 @@ public class VoteTest {
 
     public static void main(String[] args)
     {
-        System.out.print("Hello World. Main called here. ");
+        if(args.length < 4)
+        {
+            System.err.println("Error! Usage is #runs #samples #iters outfile.mat");
+            System.exit(1);
+        }
+        //int junkArg = Integer.parseInt(args[0]);
+        int numRuns = Integer.parseInt(args[0]);
+        int numSamples = Integer.parseInt(args[1]);
+        int numIters = Integer.parseInt(args[2]);
+        String outfile = new String(args[3]);
 
-        totalRuns =10; numPercentages= 10;
-        matlabWriter = new MatlabWriter("vote.mat", numPercentages, totalRuns);
+        System.out.print("Hello World. Main called here. ");
+        trainingIterations = numIters;
+        totalRuns =numRuns; numPercentages= numSamples;
+        matlabWriter = new MatlabWriter(outfile, numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
             doIt();
         }
@@ -309,7 +325,7 @@ public class VoteTest {
         }
 
         public double invoke() {
-            return 100*correct/(correct+incorrect);
+            return 100*(1- correct/(correct+incorrect));
         }
     }
 }
