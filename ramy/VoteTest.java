@@ -1,3 +1,4 @@
+import com.sun.xml.internal.bind.v2.TODO;
 import func.nn.backprop.BackPropagationNetwork;
 import func.nn.backprop.BackPropagationNetworkFactory;
 import opt.OptimizationAlgorithm;
@@ -19,9 +20,6 @@ import shared.reader.DataSetLabelBinarySeperator;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
-
-import com.jmatio.types.MLDouble;
-import com.jmatio.io.MatFileWriter;
 
 
 class ErrorCount
@@ -66,6 +64,7 @@ public class VoteTest {
 //Ramy's NN parameters from previous assignment. iterations 40000 learning rate .01 momentum .05 -H a,o meaning one hidden layer for a' = (attribs + classes) / 2,
 //'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
      //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
+  //TODO: the old one had TWO output nodes.
     private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, trainingIterations = 100; //for vote
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
@@ -169,16 +168,17 @@ public class VoteTest {
         }
         end = System.nanoTime();
         testingTime = end - start;
+        double pctError = new PercentError(correct, incorrect).invoke();
         testingTime /= Math.pow(10,9);
         matlabWriter.addValue(correct/incorrect, oaNames[i]+"_trainingError", runNumber);
         results +=  "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
                     "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
-                    + df.format(correct/(correct+incorrect)*100);// + "%\nTraining time: " + df.format(trainingTime)
+                    + df.format(pctError);// + "%\nTraining time: " + df.format(trainingTime)
                     //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
     }
 
     private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
-  //      System.out.println("\nError results for " + oaName + "\n---------------------------");
+        System.out.println("\nError results for " + oaName + "\n---------------------------");
 
         for(int i = 0; i < trainingIterations; i++) {
             oa.train();
@@ -192,7 +192,7 @@ public class VoteTest {
                 example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
                 error += measure.value(output, example);
             }
-        //System.out.println(df.format(error));
+        System.out.println(df.format(error));
         return error;
     }
 
@@ -217,8 +217,9 @@ public class VoteTest {
                 double predicted = Double.parseDouble(networks[i].getOutputValues().toString());
                 double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
             }
-            results.add(i, new ErrorCount(correct,wrong));
-            matlabWriter.addValue(correct/wrong, oaNames[i] + "_testError",runNumber);
+            //results.add(i, new ErrorCount(correct,wrong));
+            double pctError = new PercentError(correct,wrong).invoke();
+            matlabWriter.addValue(pctError, oaNames[i] + "_testError",runNumber);
             System.out.println("test Error is " + correct + "/" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
         }
 
@@ -289,7 +290,7 @@ public class VoteTest {
     {
         System.out.print("Hello World. Main called here. ");
 
-        totalRuns =3; numPercentages= 3;
+        totalRuns =10; numPercentages= 10;
         matlabWriter = new MatlabWriter("vote.mat", numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
             doIt();
@@ -298,4 +299,17 @@ public class VoteTest {
         matlabWriter.write();
     }
 
+    private static class PercentError {
+        private double correct;
+        private double incorrect;
+
+        public PercentError(double correct, double incorrect) {
+            this.correct = correct;
+            this.incorrect = incorrect;
+        }
+
+        public double invoke() {
+            return 100*correct/(correct+incorrect);
+        }
+    }
 }
