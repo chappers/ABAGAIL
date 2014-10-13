@@ -288,11 +288,8 @@ public class VoteTest {
     public static void main(String[] args)
     {
         System.out.print("Hello World. Main called here. ");
+
         totalRuns =3; numPercentages= 3;
-        double[] src = new double[] { 1.3, 2.0, 3.0, 4.0, 5.0, 6.0 };
-        String name = "doublearr";
-        MLDouble mlDouble = new MLDouble( name, src, 3 );
-        MLDouble TestMLDouble = new MLDouble("testErrorRMS", new double[199] , 1);
         matlabWriter = new MatlabWriter("vote.mat", numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
             doIt();
