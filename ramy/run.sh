@@ -1,8 +1,8 @@
 #!/bin/bash
 # edit the classpath to to the location of your ABAGAIL jar file
 #
-export CLASSPATH=./lib/ABAGAIL.jar:../../output/production/ABAGAIL/:../Common/JMatIO/lib/jmatio.jar:$CLASSPATH
-mkdir -p data/plot logs image
+export CLASSPATH=./lib/ABAGAIL.jar:../../output/production/ABAGAIL/:../../../Common/JMatIO/lib/jmatio.jar:$CLASSPATH
+#mkdir -p data/plot logs image
 
 # NN
 echo "NN 10 runs 10 samples 10 iters"
