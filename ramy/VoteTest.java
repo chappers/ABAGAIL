@@ -169,12 +169,12 @@ public class VoteTest {
         }
         end = System.nanoTime();
         testingTime = end - start;
-        double pctError = new PercentError(correct, incorrect).invoke();
+        double pctError = new PercentError(correct, incorrect).invoke() * 100;
         testingTime /= Math.pow(10,9);
         matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
         System.out.println("\n---------------------------\nError results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
         results +=  "Correctly classified " + correct + " instances." +
-                    "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
+                    "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
                     + df.format(100 - pctError);// + "%\nTraining time: " + df.format(trainingTime)
                     //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
         System.out.println(results);
@@ -220,7 +220,7 @@ public class VoteTest {
                 double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
             }
             //results.add(i, new ErrorCount(correct,wrong));
-            double pctError = new PercentError(correct,wrong).invoke();
+            double pctError = new PercentError(correct,wrong).invoke()*100;
             matlabWriter.addValue(pctError, oaNames[i] + "_testError",runNumber);
             System.out.println("\n---------------------------\nTest results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
             System.out.println("test Error is " + correct + "vs" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
@@ -325,7 +325,7 @@ public class VoteTest {
         }
 
         public double invoke() {
-            return 100*(1- correct/(correct+incorrect));
+            return (1- correct/(correct+incorrect));
         }
     }
 }
