@@ -6,10 +6,7 @@ import opt.RandomizedHillClimbing;
 import opt.SimulatedAnnealing;
 import opt.example.NeuralNetworkOptimizationProblem;
 import opt.ga.StandardGeneticAlgorithm;
-import shared.DataSet;
-import shared.ErrorMeasure;
-import shared.Instance;
-import shared.SumOfSquaresError;
+import shared.*;
 import shared.filt.DiscreteToBinaryFilter;
 import shared.filt.LabelSplitFilter;
 import shared.filt.RandomOrderFilter;
@@ -17,6 +14,7 @@ import shared.filt.TestTrainSplitFilter;
 import shared.reader.ArffDataSetReader;
 import shared.reader.DataSetLabelBinarySeperator;
 
+import javax.xml.crypto.Data;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Vector;
@@ -65,7 +63,7 @@ public class VoteTest {
 //'o' = classes. TODO: I need to either extract these from the data, or make the arguments. From data is better.
      //private static int inputLayer = 7, hiddenLayer = 5, outputLayer = 1, trainingIterations = 1000;
   //TODO: the old one had TWO output nodes.
-    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, trainingIterations = 1000; //for vote
+    private static int inputLayer = 16, hiddenLayer = 7, outputLayer = 1, totalTrainingIterations = 1000; //for vote
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
@@ -87,36 +85,35 @@ public class VoteTest {
     private static int totalRuns=0;
     private static int numPercentages=1;
     private static MatlabWriter matlabWriter = null;
+    private static int trainingIterations;
     public static void doIt() {
 
 
         DataSet fullSet= loadData();
-        int pctBegin = 10;
-        int incr = (int) Math.ceil((100 - pctBegin) / (numPercentages -1));
-
-        for (int i = pctBegin; i <= 100; i+=incr)
-        {
-            int pct = Math.min(100, i);
-            System.out.println("\n************  " +pct+ "% training\n");
-            sampleTrainingPercentage(fullSet, pct);
-        }
-
-        runNumber++;
-    }
-
-    private static void sampleTrainingPercentage(DataSet fullSet, int pct) {
         RandomOrderFilter randomizer = new RandomOrderFilter();
         randomizer.filter(fullSet);
-        TestTrainSplitFilter splitter = new TestTrainSplitFilter(pct);
+        TestTrainSplitFilter splitter = new TestTrainSplitFilter(33);
         splitter.filter(fullSet);
+
         DataSet trainingSet = splitter.getTrainingSet();
         DataSet testSet  = splitter.getTestingSet();
 
         trainingInstances = initializeInstances(trainingSet);
-        if( pct == 100)
-          {  testInstances = trainingInstances;}
-        else
-        {  testInstances = initializeInstances(testSet);}
+        testInstances = initializeInstances(testSet);
+        int itersBegin = 10;
+        int incr = (int) Math.ceil((totalTrainingIterations ) / Math.max(1, (numPercentages -1)));
+
+
+
+        for (int i = itersBegin; i <= totalTrainingIterations; i+=incr)
+        {
+            trainingIterations = i;
+            sampleTrainingPercentage(trainingSet, 100);
+        }
+        runNumber++;
+    }
+
+    private static void sampleTrainingPercentage(DataSet trainingSet, int pct) {
 
         //set = new DataSet(trainingInstances);
 
@@ -127,8 +124,8 @@ public class VoteTest {
         }
 
         oa[0] = new RandomizedHillClimbing(nnop[0]);
-        oa[1] = new SimulatedAnnealing(1E11, .95, nnop[1]);
-        oa[2] = new StandardGeneticAlgorithm(200, 100, 10, nnop[2]);
+        oa[1] = new SimulatedAnnealing(1E11, .9995, nnop[1]);
+        oa[2] = new StandardGeneticAlgorithm(500, 300, 100, nnop[2]);
         double trainingError[] = new double [oa.length];
         for(int i = 0; i < oa.length; i++) {
             double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
@@ -138,8 +135,9 @@ public class VoteTest {
             trainingTime /= Math.pow(10,9);
 
             evalTrainingError(i);
+            evalTestError(i);
         }
-        evalTestError();
+
 
 
     }
@@ -169,21 +167,36 @@ public class VoteTest {
         }
         end = System.nanoTime();
         testingTime = end - start;
-        double pctError = new PercentError(correct, incorrect).invoke() * 100;
+        double pctError = new PercentError(correct, incorrect).invoke() ;
         testingTime /= Math.pow(10,9);
         matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
         System.out.println("\n---------------------------\nError results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
         results +=  "Correctly classified " + correct + " instances." +
                     "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
-                    + df.format(100 - pctError);// + "%\nTraining time: " + df.format(trainingTime)
+                    + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
                     //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
         System.out.println(results);
         results = "";
     }
 
     private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
-        for(int i = 0; i < trainingIterations; i++) {
-            oa.train();
+        double x = 0;
+        double tr = 0;
+        if (false) // oaName.equals("RHC"))
+        {
+            ConvergenceTrainer C = new ConvergenceTrainer(oa, 1E-10, 1000);
+            C.train();
+            x = C.getIterations();
+            System.out.println("Convergence trainer says " + x);
+        }
+        else {
+            FixedIterationTrainer F = new  FixedIterationTrainer(oa, trainingIterations);
+            x = F.train();
+
+            System.out.println("Fixed trainer says " + x);
+            //for (int i = 0; i < trainingIterations; i++) {
+            //x = oa.train();
+            //}
         }
             double error = 0;
             for(int j = 0; j < trainingInstances.length; j++) {
@@ -204,29 +217,34 @@ public class VoteTest {
 //    }
 
 
-    private  static  Vector<ErrorCount> evalTestError()
+    private  static /* Vector<ErrorCount>*/ void evalTestError(int i)
     {
 
 
         double correct =0, wrong = 0;
         Vector<ErrorCount> results = new Vector<ErrorCount>(oa.length);
-        for (int i = 0; i < oa.length; i++)
-        {
+        //for (int i = 0; i < oa.length; i++)
+        //{
+            Instance optimalInstance = oa[i].getOptimal();
+            networks[i].setWeights(optimalInstance.getData());
+
             for (int j = 0; j < testInstances.length;j++)
             {
                 double truth  = Double.parseDouble( testInstances[j].getLabel().toString());
                 networks[i].setInputValues(testInstances[j].getData());
+                networks[i].run();
+
                 double predicted = Double.parseDouble(networks[i].getOutputValues().toString());
                 double trash = Math.abs(predicted - truth) < 0.5 ? correct++ : wrong++;
             }
             //results.add(i, new ErrorCount(correct,wrong));
-            double pctError = new PercentError(correct,wrong).invoke()*100;
+            double pctError = new PercentError(correct,wrong).invoke();
             matlabWriter.addValue(pctError, oaNames[i] + "_testError",runNumber);
             System.out.println("\n---------------------------\nTest results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
-            System.out.println("test Error is " + correct + "vs" + wrong + " : " + df.format(correct / (correct + wrong) * 100) + " %correct");
-        }
+            System.out.println("test Error is " + correct + "vs" + wrong + " : " + 100*(1-pctError)+ " %correct");
+//        }
 
-        return results;
+  //      return results;
     }
     private static DataSet loadData()
     {
@@ -256,7 +274,7 @@ public class VoteTest {
             //System.out.println(set);
             //System.out.println(new DataSetDescription(set));
             int numInstances = set.size();
-            int numAttributes = set.getLabelDataSet().getDescription().getAttributeCount();
+            int numAttributes = set.getDescription().getAttributeCount(); //set.getLabelDataSet().getDescription().getAttributeCount();
             attributes = new double[numInstances][][];
 
             for(int i = 0; i < attributes.length; i++) {
@@ -270,7 +288,9 @@ public class VoteTest {
                 for(int j = 0; j < numAttributes; j++)
                     attributes[i][0][j] =  set.get(i).getContinuous(j);//Double.parseDouble(scan.next());
 
-                attributes[i][1][0] = set.get(i).getContinuous();// Double.parseDouble(scan.next());
+                Instance p = set.get(i).getLabel();
+                attributes[i][1][0] = p.getContinuous();
+
             }
 
         }
@@ -305,7 +325,7 @@ public class VoteTest {
         String outfile = new String(args[3]);
 
         System.out.print("Hello World. Main called here. ");
-        trainingIterations = numIters;
+        totalTrainingIterations = numIters;
         totalRuns =numRuns; numPercentages= numSamples;
         matlabWriter = new MatlabWriter(outfile, numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
