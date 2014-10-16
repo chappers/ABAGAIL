@@ -95,20 +95,22 @@ public class VoteTest {
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(33);
         splitter.filter(fullSet);
 
-        DataSet trainingSet = splitter.getTrainingSet();
-        DataSet testSet  = splitter.getTestingSet();
+        DataSet trainingSet = fullSet;//splitter.getTrainingSet();
+        DataSet testSet  = fullSet; //.getTestingSet();
 
         trainingInstances = initializeInstances(trainingSet);
-        testInstances = initializeInstances(testSet);
+        testInstances = trainingInstances; //  initializeInstances(testSet);
+
         int itersBegin = 10;
-        int incr = (int) Math.ceil((totalTrainingIterations ) / Math.max(1, (numPercentages -1)));
+        int incr = (int) Math.ceil((totalTrainingIterations ) / Math.max(1, (numPercentages - 1)));
 
 
 
         for (int i = itersBegin; i <= totalTrainingIterations; i+=incr)
         {
             trainingIterations = i;
-            sampleTrainingPercentage(trainingSet, 100);
+            DataSet set = new DataSet(trainingInstances);
+            sampleTrainingPercentage(set, 100);
         }
         runNumber++;
     }
@@ -127,9 +129,11 @@ public class VoteTest {
         oa[1] = new SimulatedAnnealing(1E11, .9995, nnop[1]);
         oa[2] = new StandardGeneticAlgorithm(500, 300, 100, nnop[2]);
         double trainingError[] = new double [oa.length];
+
+
         for(int i = 0; i < oa.length; i++) {
             double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
-             trainingError[i] = train(oa[i], networks[i], oaNames[i]); //trainer.train();
+            trainingError[i] = train(oa[i], networks[i], oaNames[i]); //trainer.train();
             end = System.nanoTime();
             trainingTime = end - start;
             trainingTime /= Math.pow(10,9);
@@ -199,15 +203,18 @@ public class VoteTest {
             //}
         }
             double error = 0;
-            for(int j = 0; j < trainingInstances.length; j++) {
-                network.setInputValues(trainingInstances[j].getData());
-                network.run();
+        Instance optimalInstance = oa.getOptimal();
+        network.setWeights(optimalInstance.getData());
 
-                Instance output = trainingInstances[j].getLabel(), example = new Instance(network.getOutputValues());
-                example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
-                error += measure.value(output, example);
-            }
-       // System.out.println(df.format(error));
+        for(int j = 0; j < trainingInstances.length; j++) {
+            network.setInputValues(trainingInstances[j].getData());
+            network.run();
+
+            Instance output = trainingInstances[j].getLabel(), example = new Instance(network.getOutputValues());
+            example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
+            error += measure.value(output, example);
+        }
+        // System.out.println(df.format(error));
         return error;
     }
 
@@ -219,8 +226,6 @@ public class VoteTest {
 
     private  static /* Vector<ErrorCount>*/ void evalTestError(int i)
     {
-
-
         double correct =0, wrong = 0;
         Vector<ErrorCount> results = new Vector<ErrorCount>(oa.length);
         //for (int i = 0; i < oa.length; i++)
