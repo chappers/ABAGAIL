@@ -80,18 +80,20 @@ public class VoteTest {
 
     private static DecimalFormat df = new DecimalFormat("0.000");
     //TODO: do i need to pass in rows and columns?
-
+    private static double cooling;
     private static int runNumber=0;
     private static int totalRuns=0;
     private static int numPercentages=1;
     private static MatlabWriter matlabWriter = null;
     private static int trainingIterations;
+    private static int GA_max = 10000;
+    private static int RHC_max = 10000;
     public static void doIt() {
 
 
         DataSet fullSet= loadData();
         RandomOrderFilter randomizer = new RandomOrderFilter();
-        randomizer.filter(fullSet);
+        //randomizer.filter(fullSet);
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(33);
         splitter.filter(fullSet);
 
@@ -101,21 +103,17 @@ public class VoteTest {
         trainingInstances = initializeInstances(trainingSet);
         testInstances = trainingInstances; //  initializeInstances(testSet);
 
-        int itersBegin = 10;
-        int incr = (int) Math.ceil((totalTrainingIterations ) / Math.max(1, (numPercentages - 1)));
+        DataSet set = new DataSet(trainingInstances);
+        sampleTrainingPercentage(set);
 
-
-
-        for (int i = itersBegin; i <= totalTrainingIterations; i+=incr)
-        {
-            trainingIterations = i;
-            DataSet set = new DataSet(trainingInstances);
-            sampleTrainingPercentage(set, 100);
-        }
         runNumber++;
     }
 
-    private static void sampleTrainingPercentage(DataSet trainingSet, int pct) {
+    private static int computeIncr(int total) {
+        return (int) Math.ceil((total) / Math.max(1, (numPercentages - 1)));
+    }
+
+    private static void sampleTrainingPercentage(DataSet trainingSet) {
 
         //set = new DataSet(trainingInstances);
 
@@ -124,36 +122,58 @@ public class VoteTest {
                 new int[] {inputLayer, hiddenLayer, outputLayer});
             nnop[i] = new NeuralNetworkOptimizationProblem(trainingSet, networks[i], measure);
         }
-
         oa[0] = new RandomizedHillClimbing(nnop[0]);
-        oa[1] = new SimulatedAnnealing(1E11, .9995, nnop[1]);
+        cooling = .9995;
+        oa[1] = new SimulatedAnnealing(1E11, cooling, nnop[1]);
         oa[2] = new StandardGeneticAlgorithm(500, 300, 100, nnop[2]);
         double trainingError[] = new double [oa.length];
 
+        for(int i = 0; i < oa.length; i++)
+        {
+            int itersBegin = 1;
 
-        for(int i = 0; i < oa.length; i++) {
-            double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
-            trainingError[i] = train(oa[i], networks[i], oaNames[i]); //trainer.train();
-            end = System.nanoTime();
-            trainingTime = end - start;
-            trainingTime /= Math.pow(10,9);
+            Boolean doingSA = "SA".equals(oaNames[i]);
+            int howMany = GA_max;
 
-            evalTrainingError(i);
-            evalTestError(i);
+            if(doingSA ) {
+                howMany = totalTrainingIterations;
+            }
+            int incr = computeIncr(howMany);
+
+            for (int j = itersBegin; j <= howMany+incr; j+=incr)
+            {
+                double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
+                train(oa[i], networks[i], oaNames[i], j); //trainer.train();
+
+                end = System.nanoTime();
+                trainingTime = end - start;
+                trainingTime /= Math.pow(10, 9);
+
+                double pctError = evalPercentError(i, oa[i], trainingInstances, howMany);
+
+                System.out.println("\nRun " + runNumber +  "/"+ totalRuns+ " : " + j +
+                        "/" + howMany  + " iterations" +
+                        "\n---------------------------\nError results for " + oaNames[i] );
+                results +=  "Correctly classified " + correct + " instances." +
+                        "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
+                        + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
+                //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+                System.out.println(results);
+                results = "";
+
+            }
+            //evalTestError(i);
         }
-
-
-
     }
 
-    private static void evalTrainingError(int i)
+    private static double evalPercentError(int i, OptimizationAlgorithm oa, Instance[] trainingInstances, int iters)
     {
         double correct=0;
         double incorrect=0;
         double start;
         double end;
         double testingTime;
-        Instance optimalInstance = oa[i].getOptimal();
+        Instance optimalInstance = oa.getOptimal();
         networks[i].setWeights(optimalInstance.getData());
 
         double predicted, actual;
@@ -174,34 +194,22 @@ public class VoteTest {
         double pctError = new PercentError(correct, incorrect).invoke() ;
         testingTime /= Math.pow(10,9);
         matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
-        System.out.println("\n---------------------------\nError results for " + oaNames[i] + " with " + trainingIterations +" iterations\n");
-        results +=  "Correctly classified " + correct + " instances." +
-                    "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
-                    + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
-                    //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
-        System.out.println(results);
-        results = "";
+        return pctError;
     }
 
-    private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName) {
+    private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName, int howMany)
+    {
         double x = 0;
         double tr = 0;
-        if (false) // oaName.equals("RHC"))
-        {
-            ConvergenceTrainer C = new ConvergenceTrainer(oa, 1E-10, 1000);
-            C.train();
-            x = C.getIterations();
-            System.out.println("Convergence trainer says " + x);
-        }
-        else {
-            FixedIterationTrainer F = new  FixedIterationTrainer(oa, trainingIterations);
-            x = F.train();
+ //      double yo = Math.log(1E-11 / 1E11) / Math.log(cooling);
 
-            System.out.println("Fixed trainer says " + x);
-            //for (int i = 0; i < trainingIterations; i++) {
-            //x = oa.train();
-            //}
-        }
+        FixedIterationTrainer F = new FixedIterationTrainer(oa, howMany);
+        x = F.train();
+
+        return x;
+    }
+        //System.out.println("Fixed trainer says " + x);
+/*
             double error = 0;
         Instance optimalInstance = oa.getOptimal();
         network.setWeights(optimalInstance.getData());
@@ -217,14 +225,14 @@ public class VoteTest {
         // System.out.println(df.format(error));
         return error;
     }
-
+*/
 //    private static Vector<ErrorCount> evalTrainingError()
 //    {
 //
 //    }
+/*
 
-
-    private  static /* Vector<ErrorCount>*/ void evalTestError(int i)
+    private  static Vector<ErrorCount> void evalTestError(int i)
     {
         double correct =0, wrong = 0;
         Vector<ErrorCount> results = new Vector<ErrorCount>(oa.length);
@@ -251,6 +259,7 @@ public class VoteTest {
 
   //      return results;
     }
+    */
     private static DataSet loadData()
     {
        // ArffDataSetReader dsr = new ArffDataSetReader(new File("").getAbsolutePath() +"/vote.arff");
