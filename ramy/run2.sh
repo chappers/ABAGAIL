@@ -8,11 +8,11 @@ SAMPLES=20;
 ITERS=100000;
 numProcs=8;
 
-i=0;
-for(i=0; i< numProcs; i++)
-{
-  echo "yo yo"
-}
+numProcs=8;
+for i in 1 2 3 4 5
+do
+  echo "$i $numProcs yo yo"
+done
 # NN
 #echo "NN 10 runs 10 samples 10 iters"
 # { time java VoteTest 3 20 100000 Vote_3a_20_100000.mat ;}  > NN_Vote3runsa_20samples_10000iters.log 2>&1 &

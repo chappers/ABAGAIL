@@ -8,7 +8,7 @@ colordef black
 
 set(0,'DefaultFigureWindowStyle','docked')
 %%
-data = 'ramy/Vote_3*'%'../../saved_data/Vote*';
+data = 'ramy'%'../../saved_data/Vote*';
 %data = '*vote5pct';
 %%
 [status, cmdout] = system(['ls ' data '*.mat'])

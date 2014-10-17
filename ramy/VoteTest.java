@@ -67,7 +67,7 @@ public class VoteTest {
     private static BackPropagationNetworkFactory factory = new BackPropagationNetworkFactory();
     
     private static ErrorMeasure measure = new SumOfSquaresError();
-    private static Instance[] trainingInstances = null;
+    private static Instance[] theInstances = null;
     private static Instance[] testInstances = null;
     //private static DataSet set = null;
 
@@ -93,18 +93,18 @@ public class VoteTest {
 
         DataSet fullSet= loadData();
         RandomOrderFilter randomizer = new RandomOrderFilter();
-        //randomizer.filter(fullSet);
+        randomizer.filter(fullSet);
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(33);
         splitter.filter(fullSet);
 
-        DataSet trainingSet = fullSet;//splitter.getTrainingSet();
-        DataSet testSet  = fullSet; //.getTestingSet();
+        DataSet trainingSet = splitter.getTrainingSet();
+        DataSet testSet  = splitter.getTestingSet();
 
-        trainingInstances = initializeInstances(trainingSet);
-        testInstances = trainingInstances; //  initializeInstances(testSet);
+        theInstances = initializeInstances(trainingSet);
+        testInstances =   initializeInstances(testSet);
 
-        DataSet set = new DataSet(trainingInstances);
-        sampleTrainingPercentage(set);
+
+        sampleTrainingPercentage(trainingSet);
 
         runNumber++;
     }
@@ -138,66 +138,79 @@ public class VoteTest {
             if(doingSA ) {
                 howMany = totalTrainingIterations;
             }
-            int incr = computeIncr(howMany);
+            int incr = 100; //computeIncr(howMany);
 
-            for (int j = itersBegin; j <= howMany+incr; j+=incr)
+           // for (int j = itersBegin; j <= howMany+incr; j+=incr)
+            double err = 1;
+            double THRESHOLD = 0;
+            double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
+            int iterCount =0;
+            double pctError = 100;
+            int perfectCount = 0;
+            while ( pctError >0 && (perfectCount) < 100)
             {
-                double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
-                train(oa[i], networks[i], oaNames[i], j); //trainer.train();
+                if(pctError == 0)
+                    perfectCount++;
 
-                end = System.nanoTime();
-                trainingTime = end - start;
-                trainingTime /= Math.pow(10, 9);
+                err = train(oa[i], incr);
+                iterCount += incr;
+                pctError= evalPercentError(oaNames[i]+"_trainingError", oa[i], networks[i], theInstances, iterCount);
 
-                double pctError = evalPercentError(i, oa[i], trainingInstances, howMany);
-
-                System.out.println("\nRun " + runNumber +  "/"+ totalRuns+ " : " + j +
-                        "/" + howMany  + " iterations" +
-                        "\n---------------------------\nError results for " + oaNames[i] );
-                results +=  "Correctly classified " + correct + " instances." +
-                        "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
-                        + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
-                //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
-                System.out.println(results);
-                results = "";
-
+                double testError= evalPercentError(oaNames[i]+"_testError", oa[i], networks[i], testInstances, iterCount);
             }
+            printResults(i, iterCount, correct, incorrect, pctError, err);
+            end = System.nanoTime();
+            trainingTime = end - start;
+            trainingTime /= Math.pow(10, 9);
+            matlabWriter.addValue(trainingTime, oaNames[i] + "_Time", runNumber);
+
             //evalTestError(i);
         }
     }
 
-    private static double evalPercentError(int i, OptimizationAlgorithm oa, Instance[] trainingInstances, int iters)
+    private static void printResults(int i, int howMany, double correct, double incorrect, double pctError, double err) {
+        System.out.println("\nRun " + runNumber + "/" + totalRuns + " : " + howMany + " iterations" +
+                "\n---------------------------\nError results for " + oaNames[i] + " " + err);
+        results +=  "Correctly classified " + correct + " instances." +
+                "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
+                + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
+        //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
+        System.out.println(results);
+        results = "";
+    }
+
+    private static double evalPercentError(String name, OptimizationAlgorithm oa, BackPropagationNetwork network, Instance[] theInstances, int iters)
     {
         double correct=0;
         double incorrect=0;
         double start;
         double end;
         double testingTime;
+
         Instance optimalInstance = oa.getOptimal();
-        networks[i].setWeights(optimalInstance.getData());
+        network.setWeights(optimalInstance.getData());
 
         double predicted, actual;
-        start = System.nanoTime();
 
-        for(int j = 0; j < trainingInstances.length; j++) {
-            networks[i].setInputValues(trainingInstances[j].getData());
-            networks[i].run();
+        for(int j = 0; j < theInstances.length; j++) {
+            network.setInputValues(theInstances[j].getData());
+            network.run();
 
-            predicted = Double.parseDouble(trainingInstances[j].getLabel().toString());
-            actual = Double.parseDouble(networks[i].getOutputValues().toString());
+            predicted = Double.parseDouble(theInstances[j].getLabel().toString());
+            actual = Double.parseDouble(network.getOutputValues().toString());
 
             double trash = Math.abs(predicted - actual) < 0.5 ? correct++ : incorrect++;
 
         }
-        end = System.nanoTime();
-        testingTime = end - start;
+
         double pctError = new PercentError(correct, incorrect).invoke() ;
-        testingTime /= Math.pow(10,9);
-        matlabWriter.addValue(pctError, oaNames[i]+"_trainingError", runNumber);
+
+        matlabWriter.addValue(pctError, name, runNumber);
+        matlabWriter.addValue(iters, name+"Iterations", runNumber);
         return pctError;
     }
 
-    private static double train(OptimizationAlgorithm oa, BackPropagationNetwork network, String oaName, int howMany)
+    private static double train(OptimizationAlgorithm oa, int howMany)
     {
         double x = 0;
         double tr = 0;
@@ -208,30 +221,7 @@ public class VoteTest {
 
         return x;
     }
-        //System.out.println("Fixed trainer says " + x);
 /*
-            double error = 0;
-        Instance optimalInstance = oa.getOptimal();
-        network.setWeights(optimalInstance.getData());
-
-        for(int j = 0; j < trainingInstances.length; j++) {
-            network.setInputValues(trainingInstances[j].getData());
-            network.run();
-
-            Instance output = trainingInstances[j].getLabel(), example = new Instance(network.getOutputValues());
-            example.setLabel(new Instance(Double.parseDouble(network.getOutputValues().toString())));
-            error += measure.value(output, example);
-        }
-        // System.out.println(df.format(error));
-        return error;
-    }
-*/
-//    private static Vector<ErrorCount> evalTrainingError()
-//    {
-//
-//    }
-/*
-
     private  static Vector<ErrorCount> void evalTestError(int i)
     {
         double correct =0, wrong = 0;
