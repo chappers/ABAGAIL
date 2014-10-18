@@ -60,7 +60,7 @@ Commandline parameter(s):
 """
 
 # set N value.  This is the number of points
-N = 50
+N = 10
 random = Random()
 
 points = [[0 for x in xrange(2)] for x in xrange(N)]
@@ -77,7 +77,7 @@ hcp = GenericHillClimbingProblem(ef, odd, nf)
 gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 
 
-def savePath2Matlab(name, path, num):
+def savePath2Matlab(name, path, num, mat):
     xrow =2*(num);
     yrow = xrow+1;
     for i in range(0,len(path)):
@@ -85,17 +85,17 @@ def savePath2Matlab(name, path, num):
         t= points[p]
         x = points[path[i]][0]
         y = points[path[i]][1]
-        mw.addValue(x, name,xrow )
-        mw.addValue(y, name,yrow )
+        mat.addValue(x, name,xrow )
+        mat.addValue(y, name,yrow )
 
 
 
-def saveFit(name, vec, num):
+def saveFit(name, vec, num, mat):
     for i in vec :
-        mw.addValue(i,name,num)
+        mat.addValue(i,name,num)
 
 
-def RHCExperiment(experiment, paramRange):
+def RHCExperiment(name, experiment, paramRange, mat):
     fitVec =[]
     t = paramRange[1]-paramRange[0]
     fit = FixedIterationTrainer(experiment,t)
@@ -104,48 +104,55 @@ def RHCExperiment(experiment, paramRange):
         fitVec.append(fitness)
         path = []
         for x in range(0,N):
-            path.append(rhc.getOptimal().getDiscrete(x))
-        savePath2Matlab("RHC", path, idx)
+            path.append(experiment.getOptimal().getDiscrete(x))
+        savePath2Matlab(name, path, idx,mat)
     #mw.addValue(iters,"RHC_iterations",idx)
-    saveFit("RHC_iterations", paramRange, 0)
-    saveFit("RHC_fitness", fitVec, 0)
+    saveFit(name+"_iterations", paramRange, 0,mat)
+    saveFit(name+"_fitness", fitVec, 0, mat)
     print fitVec
     return path
 
 
-mw = MatlabWriter("ts.mat", N, 2)
+rhcWriter = MatlabWriter("ts_rhc.mat", N, 2)
 rhc = RandomizedHillClimbing(hcp)
 begin = 1;
 end = 50000;
 numSamples = 100;
 step = (end - begin) / numSamples;
 
-path = RHCExperiment(rhc, range(begin, end, step))
+path = RHCExperiment("RHC", rhc, range(begin, end, step), rhcWriter)
 
 print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
 print "Route:"
 print path
-print "writing MATLAB matrix"
-mw.write();
+rhcWriter.write()
 
-print "All Done! Bye now :)"
-sys.exit();
+begin = 1;
+end = 1000000;
+numSamples = 300;
+step = (end - begin) / numSamples;
+SA_cooling = .695
+iterVec = range(begin, end, step)
 
-#plt.plot(points)
+sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
+#saWriter = MatlabWriter("ts_sa.mat", N, 2)
+path = RHCExperiment("SA",sa,iterVec , rhcWriter)
 
-SA_iters =2000;
-SA_cooling = .6
-sa = SimulatedAnnealing(1E11, SA_cooling, hcp)
-fit = FixedIterationTrainer(sa, SA_iters)
-fit.train()
+#fit = FixedIterationTrainer(sa, SA_iters)
+#fit.train()
 print "SA Inverse of Distance: " + str(ef.value(sa.getOptimal()))
 print "Route:"
-path = []
-for x in range(0,N):
-    path.append(sa.getOptimal().getDiscrete(x))
-print path
+#path = []
+#for x in range(0,N):
+#    path.append(sa.getOptimal().getDiscrete(x))
+#print path
 
-save2matlab("SA", path)
+
+print "writing SA MATLAB matrix"
+rhcWriter.write()
+print "All Done! Bye now :)"
+sys.exit();
+#save2matlab("SA", path)
 
 #ga = StandardGeneticAlgorithm(2000, 1500, 250, gap)
 GA_population =2000

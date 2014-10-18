@@ -52,6 +52,7 @@ public class MatlabWriter {
 
     public List<MLDouble> makeList() {
         //for (HashMap.Entry<String, Classifier> cursor : classifiers.entrySet())
+
         List<MLDouble> list = new ArrayList<MLDouble>();
         int largest = -1;
         for (HashMap.Entry<String, ArrayList<Vector<Double>>> cursor : map.entrySet())
@@ -60,7 +61,7 @@ public class MatlabWriter {
 
             r = cursor.getValue().size();
             c = cursor.getValue().get(0).size();
-            List<Double> allValues = new ArrayList<>();
+
 
             for (Vector<Double> vec : cursor.getValue()) {
                 if (vec.size() > largest)
@@ -69,7 +70,7 @@ public class MatlabWriter {
                 }
 
             }
-
+            List<Double> allValues = new ArrayList<>(largest * r);
             for (Vector<Double> vec : cursor.getValue())
             {
                 while (vec.size() < largest)
@@ -95,8 +96,8 @@ public class MatlabWriter {
                 }
             }
 
-            Vector<Double> theValues = new Vector<Double>();
-            theValues.addAll(allValues);
+            //Vector<Double> theValues = new Vector<Double>();
+            //theValues.addAll(allValues);
 
 
             int numel = r * c;
