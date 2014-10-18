@@ -84,38 +84,40 @@ def savePath2Matlab(name, path, num):
         p = path[i]
         t= points[p]
         x = points[path[i]][0]
-        mw.addValue(x, name,xrow )
-
-    for i in range(0,len(path)):
         y = points[path[i]][1]
+        mw.addValue(x, name,xrow )
         mw.addValue(y, name,yrow )
-    mw.write();
 
 
-def saveFit(name, vec, iters, num):
-    for i in range(0,len(vec)):
-        mw.addValue(vec[i],name,num)
-        mw.addValue(iters,name+"iterations",num)
+
+def saveFit(name, vec, num):
+    for i in vec :
+        mw.addValue(i,name,num)
+
 
 def RHCExperiment(experiment, paramRange):
     fitVec =[]
+    t = paramRange[1]-paramRange[0]
+    fit = FixedIterationTrainer(experiment,t)
     for idx, iters in enumerate(paramRange):
-        fit = FixedIterationTrainer(experiment, iters)
         fitness = fit.train()
         fitVec.append(fitness)
         path = []
         for x in range(0,N):
             path.append(rhc.getOptimal().getDiscrete(x))
         savePath2Matlab("RHC", path, idx)
-    saveFit("RHC_fitness", fitVec, iters, 0)
+    #mw.addValue(iters,"RHC_iterations",idx)
+    saveFit("RHC_iterations", paramRange, 0)
+    saveFit("RHC_fitness", fitVec, 0)
+    print fitVec
     return path
 
 
 mw = MatlabWriter("ts.mat", N, 2)
 rhc = RandomizedHillClimbing(hcp)
-begin = 100;
-end = 2000;
-numSamples = 10;
+begin = 1;
+end = 50000;
+numSamples = 100;
 step = (end - begin) / numSamples;
 
 path = RHCExperiment(rhc, range(begin, end, step))

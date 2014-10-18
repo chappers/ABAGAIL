@@ -114,7 +114,7 @@ public class MatlabWriter {
            list.add(tmp);
         }
 
-        System.out.println(list.get(0).contentToString());
+        //System.out.println(list.get(0).contentToString());
         return list;
     }
        /*
@@ -295,7 +295,7 @@ public class MatlabWriter {
     {
         List<MLDouble> list  = this.makeList();
         try {
-            System.out.println(list.get(0).contentToString());
+
             this.writeMatFile(this.outputFile, list);
         } catch (IOException e) {
             e.printStackTrace();
