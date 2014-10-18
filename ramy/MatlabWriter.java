@@ -79,20 +79,42 @@ public class MatlabWriter {
             }
             c = largest;
 
+            int[] dims = {r ,c};
+            MLDouble tmp = new MLDouble(cursor.getKey(),dims);
+
+            Double[] foo;
+            foo = allValues.toArray(new Double[r * c]);
+
+            for (int i=0; i < r; i++)
+            {
+                for (int j = 0; j < c; j++)
+                {
+                    int idx = (i*c)+j;
+                    double val = foo[idx];
+                    tmp.set(val, i,j);
+                }
+            }
+
             Vector<Double> theValues = new Vector<Double>();
             theValues.addAll(allValues);
-            Double[] foo;
+
 
             int numel = r * c;
-            foo = allValues.toArray(new Double[r * c]);
+
             int man = allValues.size();
             int size = r*c;
-            MLDouble tmp = new MLDouble(cursor.getKey(), allValues.toArray( new Double[size]), r);
-            //MLDouble tmp = new MLDouble(cursor.getKey(), theValues.toArray( new Double[theValues.size()]), r);
+            //String str = "MakeList r="+ r +" c="+ c+" size="+size;
+            //str+="\nfoo:"+ Double.toString(foo);
+            //str+= "\n Allvalues: " + allValues;
+            //System.out.println(str);
 
+            //MLDouble tmp = new MLDouble(cursor.getKey(), allValues.toArray( new Double[size]), r);
+            //MLDouble tmp = new MLDouble(cursor.getKey(), theValues.toArray( new Double[theValues.size()]), r);
+            //System.out.println(tmp.contentToString());
            list.add(tmp);
         }
 
+        System.out.println(list.get(0).contentToString());
         return list;
     }
        /*
@@ -273,6 +295,7 @@ public class MatlabWriter {
     {
         List<MLDouble> list  = this.makeList();
         try {
+            System.out.println(list.get(0).contentToString());
             this.writeMatFile(this.outputFile, list);
         } catch (IOException e) {
             e.printStackTrace();

@@ -71,7 +71,7 @@ C.SA_trainingError = vertcat(All.SA_trainingError)';
     set(gca,'position',[0.03 0.03 1 1])
     hold off;
 
-%linkaxes(ax);
+linkaxes(ax);
 ylim([0 1]);
 %axis( [1 size(RHC_trainingError,2) 0 100]);
 break
