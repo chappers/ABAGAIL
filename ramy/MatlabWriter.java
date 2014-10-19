@@ -70,7 +70,7 @@ public class MatlabWriter {
                 }
 
             }
-            List<Double> allValues = new ArrayList<>(largest * r);
+            List<Double> allValues = new ArrayList<>();//(largest * r);
             for (Vector<Double> vec : cursor.getValue())
             {
                 while (vec.size() < largest)

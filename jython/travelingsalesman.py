@@ -2,6 +2,7 @@
 # This also prints the index of the points of the shortest route.
 # To make a plot of the route, write the points at these indexes
 # to a file and plot them in your favorite tool.
+from math import ceil
 import sys
 import os
 import time
@@ -45,6 +46,7 @@ import opt.example.TravelingSalesmanCrossOver as TravelingSalesmanCrossOver
 import opt.example.TravelingSalesmanSortEvaluationFunction as TravelingSalesmanSortEvaluationFunction
 import shared.Instance as Instance
 import util.ABAGAILArrays as ABAGAILArrays
+
 import com.jmatio.types.MLDouble as MLDouble
 #import matplotlib.pyplot as plt
 
@@ -95,22 +97,41 @@ def saveFit(name, vec, num, mat):
         mat.addValue(i,name,num)
 
 
-def RHCExperiment(name, experiment, paramRange, mat):
+def TrainAndSave(experiment, fit, mat, name, paramRange, runNum):
     fitVec =[]
-    t = paramRange[1]-paramRange[0]
-    fit = FixedIterationTrainer(experiment,t)
     for idx, iters in enumerate(paramRange):
         fitness = fit.train()
         fitVec.append(fitness)
         path = []
-        for x in range(0,N):
+        for x in range(0, N):
             path.append(experiment.getOptimal().getDiscrete(x))
-        savePath2Matlab(name, path, idx,mat)
-    #mw.addValue(iters,"RHC_iterations",idx)
-    saveFit(name+"_iterations", paramRange, 0,mat)
-    saveFit(name+"_fitness", fitVec, 0, mat)
+        savePath2Matlab(name, path, idx, mat)
+    # mw.addValue(iters,"RHC_iterations",idx)
+    saveFit(name + "_iterations", paramRange, runNum, mat)
+    saveFit(name + "_fitness", fitVec, runNum, mat)
     print fitVec
     return path
+
+
+def IterRangeExperiment(name, experiment, paramRange, mat, runNum):
+
+    t = paramRange[1]-paramRange[0]
+    fit = FixedIterationTrainer(experiment,t)
+    path = TrainAndSave(experiment, fit, mat, name, paramRange, runNum)
+    return path
+
+def CoolingRangeExperiment(name, coolingRange,iterRange, mat):
+    for idx,i in enumerate(coolingRange):
+        sa = SimulatedAnnealing(1E15, i, hcp)
+        IterRangeExperiment(name,sa,iterRange,mat,idx);
+
+
+def floatRange(vec, scale, num):
+    tmp =  [];
+    stride = int(ceil(float(len(vec)) / num))
+    for x in vec[::stride]:
+        tmp.append(float(x)/scale);
+    return tmp
 
 
 rhcWriter = MatlabWriter("ts_rhc.mat", N, 2)
@@ -120,7 +141,7 @@ end = 50000;
 numSamples = 100;
 step = (end - begin) / numSamples;
 
-path = RHCExperiment("RHC", rhc, range(begin, end, step), rhcWriter)
+path = IterRangeExperiment("RHC", rhc, range(begin, end, step), rhcWriter,0)
 
 print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
 print "Route:"
@@ -136,7 +157,10 @@ iterVec = range(begin, end, step)
 
 sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
 #saWriter = MatlabWriter("ts_sa.mat", N, 2)
-path = RHCExperiment("SA",sa,iterVec , rhcWriter)
+path = IterRangeExperiment("SA",sa,iterVec , rhcWriter,0)
+coolingRange = floatRange( range(50000, 99999 ), 100000, 50)
+coolingIters = range(1, 10000, 500)
+CoolingRangeExperiment("SA_cooling", coolingRange, coolingIters, rhcWriter);
 
 #fit = FixedIterationTrainer(sa, SA_iters)
 #fit.train()
