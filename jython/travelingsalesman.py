@@ -62,7 +62,7 @@ Commandline parameter(s):
 """
 
 # set N value.  This is the number of points
-N = 10
+N = 15
 random = Random()
 
 points = [[0 for x in xrange(2)] for x in xrange(N)]
@@ -134,7 +134,9 @@ def floatRange(vec, scale, num):
     return tmp
 
 
+
 rhcWriter = MatlabWriter("ts_rhc.mat", N, 2)
+rhcWriter.addValue(N,"numPoints",0);
 rhc = RandomizedHillClimbing(hcp)
 begin = 1;
 end = 50000;
