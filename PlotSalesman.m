@@ -8,7 +8,7 @@ ax=[];
 %for i = 1:length(names)
 %  n = names{i};
 routes = {'RHC', 'SA'};
-  
+N = path.numPoints;
 for r = 1:numel(routes)
   curves = {[routes{r} '_fitness'] [routes{r} '_iterations']}
       %for c = 1:2
@@ -17,11 +17,11 @@ for r = 1:numel(routes)
       figure('Name', fitstr{:}, 'NumberTitle', 'off');
       
       fitness = path.(fitstr{:});
-      idx = find(fitness > -1);
+      idx = find(fitness > 0);
       fitness = fitness(idx);
       
       iters = path.(iterstr{:});
-      idx = find(iters > -1);
+      idx = find(iters > 0);
       iters = iters(idx);
       plot(iters,fitness);
    %end
@@ -33,15 +33,15 @@ for r = 1:numel(routes)
       p = path.(routes{r});
       %%
       hold on
-      cols = 10;%length(path.(n));
-      rows = length(path.RHC_fitness);
+      cols = N;%length(path.(n));
+      rows =  length(path.(curves{1}))%length(path.RHC_fitness);
       for j = 1:rows
           %p = path.(names{i});
           xInd= (j-1)*2 +1;
           yInd = xInd+1;
           X = p(xInd,1:cols);
           Y = p(yInd,1:cols);
-          scatter(X, Y) ,   plot(X, Y, '-y', 'Color', colors(2,:));
+          scatter(X, Y) ,   plot(X, Y, 'Color', colors(3,:));
       end
       plot(X,Y,'r');
   hold off
@@ -49,18 +49,19 @@ for r = 1:numel(routes)
 end
 
   %%
-  cooling = path.SA_cooling(:,1:end/2);
+  cooling = path.SA_cooling_iterations;%(:,1:end/2);
   v=(sort(unique(cooling)));
+  v = v(find(v >0));
   tmp =path.SA_cooling_iterations;
-  tmp = tmp(find(tmp >-1));
-  numIters = numel(unique(tmp));
+  tmp = tmp(find(tmp >0));
+  numIters = size(path.SA_cooling_iterations,1);%numel(unique(tmp));
   numRuns = length(tmp) / numIters;
   iters = reshape(tmp, [numIters numRuns]);
-  fitness = reshape(path.SA_cooling_fitness(1:numRuns,1:numIters), [numRuns, numIters]);
+  fitness = reshape(path.SA_cooling_fitness(1:numIters,1:numRuns), [numRuns, numIters]);
   figure;
   hold on;
   num = numel(v)
   colormap(jet(num));
-  plot(v, fitness);
+ plot(v, fitness);
   
   hold off;

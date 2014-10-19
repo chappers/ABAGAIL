@@ -71,30 +71,40 @@ public class MatlabWriter {
 
             }
             List<Double> allValues = new ArrayList<>();//(largest * r);
-            for (Vector<Double> vec : cursor.getValue())
-            {
-                while (vec.size() < largest)
-                    vec.addElement(-1.0);
-
-                allValues.addAll(vec);
-            }
             c = largest;
 
             int[] dims = {r ,c};
             MLDouble tmp = new MLDouble(cursor.getKey(),dims);
+            int i=0;
+            int j=0;
+            for (Vector<Double> vec : cursor.getValue())
+            {
+                //while (vec.size() < largest)
+                //    vec.addElement(-1.0);
+               // allValues.addAll(vec);
+                j=0;
+                for(Double d : vec)
+                {
+                    tmp.set(d, i,j++);
+                }
+                i++;
+/*
+                for (int i=0; i < r; i++)
+                {
+                    for (int j = 0; j < c; j++)
+                    {
+                        int idx = (i*c)+j;
+                        double val = foo[idx];
+                        tmp.set(val, i,j);
+                    }
+                }
+*/
+
+            }
 
             Double[] foo;
             foo = allValues.toArray(new Double[r * c]);
 
-            for (int i=0; i < r; i++)
-            {
-                for (int j = 0; j < c; j++)
-                {
-                    int idx = (i*c)+j;
-                    double val = foo[idx];
-                    tmp.set(val, i,j);
-                }
-            }
 
             //Vector<Double> theValues = new Vector<Double>();
             //theValues.addAll(allValues);
