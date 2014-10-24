@@ -114,7 +114,7 @@ public class MatlabWriter {
 
             int man = allValues.size();
             int size = r*c;
-            //String str = "MakeList r="+ r +" c="+ c+" size="+size;
+            //String str = helpers"MakeList r="+ r +" c="+ c+" size="+size;
             //str+="\nfoo:"+ Double.toString(foo);
             //str+= "\n Allvalues: " + allValues;
             //System.out.println(str);

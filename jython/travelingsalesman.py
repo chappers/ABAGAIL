@@ -24,22 +24,23 @@ import opt.ga.SwapMutation as SwapMutation
 import opt.example.TravelingSalesmanCrossOver as TravelingSalesmanCrossOver
 import opt.example.TravelingSalesmanSortEvaluationFunction as TravelingSalesmanSortEvaluationFunction
 import util.ABAGAILArrays as ABAGAILArrays
-
+import getopt, sys
 
 import helpers
 import MatlabWriter
 from array import array
+import getopt as getopt
 
 
 
-
-"""
-Commandline parameter(s):
-    none
-"""
+DO_RHC = False
+DO_SA = False
+DO_GA = False
+DO_MIMIC = True
+OUTPUT = 'rhc.mat'
 
 # set N value.  This is the number of points
-N = 35
+N = 25
 random = Random()
 
 points = [[0 for x in xrange(2)] for x in xrange(N)]
@@ -55,85 +56,99 @@ cf = TravelingSalesmanCrossOver(ef)
 hcp = GenericHillClimbingProblem(ef, odd, nf)
 gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 
-rhcWriter = MatlabWriter("ts_rhc.mat", N, 2)
-rhcWriter.addValue(N,"numPoints",0);
+rhcWriter = MatlabWriter(OUTPUT, N, 2)
+rhcWriter.addValue(N,"numPoints",0)
 rhc = RandomizedHillClimbing(hcp)
-begin = 1;
-end = 50000;
-numSamples = 100;
-step = (end - begin) / numSamples;
+begin = 1
+end = 50000
+numSamples = 100
+step = (end - begin) / numSamples
+def PopulationRangeExperiment(name, ga, points, popRange, iterRange, mat):
+    for idx,i in enumerate(popRange):
+        helpers.IterRangeExperiment(name,ga,points,iterRange,mat,idx)
 
-path = helpers.IterRangeExperiment("RHC", rhc, points, range(begin, end, step), rhcWriter,0)
+if(DO_RHC):
+    path = helpers.IterRangeExperiment("RHC", rhc, points, range(begin, end, step), rhcWriter,0)
 
-print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
-print "Route:"
-print path
-rhcWriter.write()
+    print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
+    print "Route:"
+    print path
+    rhcWriter.write()
 
-begin = 1;
-end = 1000000;
-numSamples = 300;
-step = (end - begin) / numSamples;
-SA_cooling = .695
-iterVec = range(begin, end, step)
+if(DO_SA):
+    begin = 1
+    end = 10000
+    numSamples = 300
+    step = (end - begin) / numSamples
+    SA_cooling = .695
+    iterVec = range(begin, end, step)
 
-sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
-#saWriter = MatlabWriter("ts_sa.mat", N, 2)
-path = helpers.IterRangeExperiment("SA",sa,points,iterVec, rhcWriter,0)
-coolingRange = helpers.floatRange( range(50000, 99999 ), 100000, 50)
-coolingIters = range(1, 10000, 500)
-helpers.CoolingRangeExperiment("SA_cooling", points, hcp, coolingRange, coolingIters, rhcWriter)
+    sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
+    saWriter = MatlabWriter("ts_sa.mat", N, 2)
+    saWriter.addValue(N,"numPoints",0)
+    path = helpers.IterRangeExperiment("SA",sa,points,iterVec, saWriter,0)
+    coolingRange = helpers.floatRange(range(50000, 99999), 100000, 50)
+    coolingIters = range(1, 10000, 500)
+    helpers.CoolingRangeExperiment("SA_cooling", points, hcp, coolingRange, coolingIters, saWriter)
 
-#fit = FixedIterationTrainer(sa, SA_iters)
-#fit.train()
-print "SA Inverse of Distance: " + str(ef.value(sa.getOptimal()))
-print "Route:"
-print path
+    saWriter.write();
+    print "SA Inverse of Distance: " + str(ef.value(sa.getOptimal()))
+    print "Route:"
+    print path
+    print "writing GA MATLAB matrix"
+    saWriter.write()
+
+if(DO_GA):
+
+    #ga = StandardGeneticAlgorithm(2000, 1500, 250, gap)
+    GA_population =2000
+    GA_toMate =1500
+    GA_toMutate=250
+    GA_iters=20000;
+    ga = StandardGeneticAlgorithm(GA_population, GA_toMate, GA_toMutate, gap)
+
+    begin = 100;
+    end = 2200
+    step =200;
+    GAiterVec = range(begin, end, step)
+    populationRange = range(5, 1000, 100)
+    r = len(populationRange)
+    c = len(GAiterVec)
+    gaWriter = MatlabWriter("ga.mat",r,c)
+    gaWriter.addValue(N,"numPoints",0)
+    path = helpers.IterRangeExperiment("GA",ga,points,GAiterVec, gaWriter,0)
+    #PopulationRangeExperiment("GA", ga, points, populationRange, GAiterVec, gaWriter)
+    #ga.populationSize=1;
+    print "writing GA MATLAB matrix"
+    gaWriter.write()
+
+    #save2matlab("SA", path)
+
+if(DO_MIMIC):
+
+    ##  for mimic we use a sort encoding
+    ef = TravelingSalesmanSortEvaluationFunction(points)
+    fill = [N] * N
+    ranges = array('i', fill)
+    odd = DiscreteUniformDistribution(ranges)
+    df = DiscreteDependencyTree(.1, ranges)
+    pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
+
+    samplesVec = range(100, 1000, 100)
+    keepVec = range(20, 1000, 50)
+    iterVec = range(10,1000,100)
+
+    r = len(samplesVec)
+    c = len(iterVec)
+    mimicWriter = MatlabWriter("mimic_samplesVary.mat", r,c)
+
+    helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)
+    #mimic = MIMIC(200,20,pop)
+    #path = helpers.IterRangeExperiment("MIMIC",mimic, points, range(100,200,50), mimicWriter,0)
+    #fit = FixedIterationTrainer(mimic, 1000)
+    #fit.train()
 
 
-print "writing SA MATLAB matrix"
-rhcWriter.write()
-print "All Done! Bye now :)"
-sys.exit();
-#save2matlab("SA", path)
-
-#ga = StandardGeneticAlgorithm(2000, 1500, 250, gap)
-GA_population =2000
-GA_toMate =1500
-GA_toMutate=250
-GA_iters=2000000;
-ga = StandardGeneticAlgorithm(GA_population, GA_toMate, GA_toMutate, gap)
-fit = FixedIterationTrainer(ga, 2000000)
-fit.train()
-print "GA Inverse of Distance: " + str(ef.value(ga.getOptimal()))
-print "Route:"
-path = []
-for x in range(0,N):
-    path.append(ga.getOptimal().getDiscrete(x))
-print path
-
-save2matlab("GA", path)
-# for mimic we use a sort encoding
-ef = TravelingSalesmanSortEvaluationFunction(points);
-fill = [N] * N
-ranges = array('i', fill)
-odd = DiscreteUniformDistribution(ranges);
-df = DiscreteDependencyTree(.1, ranges);
-pop = GenericProbabilisticOptimizationProblem(ef, odd, df);
-
-mimic = MIMIC(500, 100, pop)
-fit = FixedIterationTrainer(mimic, 1000)
-fit.train()
-print "MIMIC Inverse of Distance: " + str(ef.value(mimic.getOptimal()))
-print "Route:"
-path = []
-optimal = mimic.getOptimal()
-fill = [0] * optimal.size()
-ddata = array('d', fill)
-for i in range(0,len(ddata)):
-    ddata[i] = optimal.getContinuous(i)
-order = ABAGAILArrays.indices(optimal.size())
-ABAGAILArrays.quicksort(ddata, order)
-print order
-save2matlab("MIMIC", order)
-mw.write();
+    mimicWriter.write()
+    print "All Done! Bye now :)"
+    sys.exit()

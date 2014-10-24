@@ -35,8 +35,6 @@ import shared.FixedIterationTrainer as FixedIterationTrainer
 
 from array import array
 
-
-
 """
 Commandline parameter(s):
    none
@@ -61,9 +59,10 @@ rhc = RandomizedHillClimbing(hcp)
 fit = FixedIterationTrainer(rhc, 200000)
 fit.train()
 print "RHC: " + str(ef.value(rhc.getOptimal()))
-
-sa = SimulatedAnnealing(1E11, .95, hcp)
-fit = FixedIterationTrainer(sa, 200000)
+cooling = .95
+SA_iters = 20000
+sa = SimulatedAnnealing(1E11, cooling, hcp)
+fit = FixedIterationTrainer(sa, SA_iters)
 fit.train()
 print "SA: " + str(ef.value(sa.getOptimal()))
 

@@ -80,14 +80,23 @@ public class VoteTest {
 
     private static DecimalFormat df = new DecimalFormat("0.000");
     //TODO: do i need to pass in rows and columns?
-    private static double cooling;
+
     private static int runNumber=0;
     private static int totalRuns=0;
     private static int numPercentages=1;
     private static MatlabWriter matlabWriter = null;
     private static int trainingIterations;
-    private static int GA_max = 10000;
+    //private static int GA_max = 1000000;
     private static int RHC_max = 10000;
+    private static int GA_population = 500;
+    private static int GA_toMate =300;
+    private static int GA_toMutate =100;
+    private static boolean GA_enabled = false;
+    private static boolean SA_enabled = false;
+    private static boolean RHC_enabled = false;
+    private static double SA_cooling = .9995;
+    private static Boolean enabled[] = new Boolean[3];
+
     public static void doIt() {
 
 
@@ -97,12 +106,15 @@ public class VoteTest {
         TestTrainSplitFilter splitter = new TestTrainSplitFilter(33);
         splitter.filter(fullSet);
 
-        DataSet trainingSet = splitter.getTrainingSet();
-        DataSet testSet  = splitter.getTestingSet();
+        DataSet trainingSet = fullSet;//splitter.getTrainingSet();
+        DataSet testSet  = fullSet;  //splitter.getTestingSet();
 
         theInstances = initializeInstances(trainingSet);
         testInstances =   initializeInstances(testSet);
 
+        enabled[0] = RHC_enabled;
+        enabled[1] = SA_enabled;
+        enabled[2] = GA_enabled;
 
         sampleTrainingPercentage(trainingSet);
 
@@ -123,22 +135,25 @@ public class VoteTest {
             nnop[i] = new NeuralNetworkOptimizationProblem(trainingSet, networks[i], measure);
         }
         oa[0] = new RandomizedHillClimbing(nnop[0]);
-        cooling = .9995;
-        oa[1] = new SimulatedAnnealing(1E11, cooling, nnop[1]);
-        oa[2] = new StandardGeneticAlgorithm(500, 300, 100, nnop[2]);
+        oa[1] = new SimulatedAnnealing(1E11, SA_cooling, nnop[1]);
+        oa[2] = new StandardGeneticAlgorithm(GA_population, GA_toMate, GA_toMutate, nnop[2]);
         double trainingError[] = new double [oa.length];
 
         for(int i = 0; i < oa.length; i++)
         {
+            if(false == enabled[i])
+                continue;
+
             int itersBegin = 1;
 
             Boolean doingSA = "SA".equals(oaNames[i]);
-            int howMany = GA_max;
+            //int howMany = GA_max;
 
-            if(doingSA ) {
-                howMany = totalTrainingIterations;
-            }
-            int incr = 100; //computeIncr(howMany);
+            //if(doingSA ) {
+//                howMany = totalTrainingIterations;
+  //          }
+            int howMany = totalTrainingIterations;
+            int incr = computeIncr(howMany);
 
            // for (int j = itersBegin; j <= howMany+incr; j+=incr)
             double err = 1;
@@ -147,16 +162,17 @@ public class VoteTest {
             int iterCount =0;
             double pctError = 100;
             int perfectCount = 0;
-            while ( pctError >0 && (perfectCount) < 100)
+            //while ( pctError >0 || (perfectCount) < 100 )
+            while ( iterCount <= totalTrainingIterations )
             {
                 if(pctError == 0)
                     perfectCount++;
 
                 err = train(oa[i], incr);
                 iterCount += incr;
-                pctError= evalPercentError(oaNames[i]+"_trainingError", oa[i], networks[i], theInstances, iterCount);
+                pctError= evalPercentError(oaNames[i]+"_trainingError", oa[i], networks[i], theInstances, iterCount,correct, incorrect);
 
-                double testError= evalPercentError(oaNames[i]+"_testError", oa[i], networks[i], testInstances, iterCount);
+                double testError= evalPercentError(oaNames[i]+"_testError", oa[i], networks[i], testInstances, iterCount,correct, incorrect);
             }
             printResults(i, iterCount, correct, incorrect, pctError, err);
             end = System.nanoTime();
@@ -179,10 +195,9 @@ public class VoteTest {
         results = "";
     }
 
-    private static double evalPercentError(String name, OptimizationAlgorithm oa, BackPropagationNetwork network, Instance[] theInstances, int iters)
+    private static double evalPercentError(String name, OptimizationAlgorithm oa, BackPropagationNetwork network, Instance[] theInstances, int iters, double correct, double incorrect   )
     {
-        double correct=0;
-        double incorrect=0;
+
         double start;
         double end;
         double testingTime;
@@ -317,20 +332,54 @@ public class VoteTest {
 
     public static void main(String[] args)
     {
-        if(args.length < 4)
+        if(args.length < 5)
         {
-            System.err.println("Error! Usage is #runs #samples #iters outfile.mat");
+            System.err.println("Error! Usage is algo (RHC,SA,GA) #runs #samples #iters outfile.mat (optional) param1 param2 param3");
             System.exit(1);
         }
+
         //int junkArg = Integer.parseInt(args[0]);
-        int numRuns = Integer.parseInt(args[0]);
-        int numSamples = Integer.parseInt(args[1]);
-        int numIters = Integer.parseInt(args[2]);
-        String outfile = new String(args[3]);
+        String algo = new String(args[0]);
+        int numRuns = Integer.parseInt(args[1]);
+        int numSamples = Integer.parseInt(args[2]);
+        int numIters = Integer.parseInt(args[3]);
+        String outfile = new String(args[4]);
 
         System.out.print("Hello World. Main called here. ");
+        if(algo.equals("RHC") )
+        {
+            RHC_enabled = true;
+        }
+        if(algo.equals("SA"))
+        {
+            SA_enabled= true;
+            if(args.length > 5 )
+            {
+                SA_cooling = Double.parseDouble(args[5]);
+            }
+
+        }
+        if(algo.equals("GA"))
+        {
+            if(args.length >5 && args.length <8 )
+            {
+                System.err.println("Error! For GA also supply param1 param2 param2. Usage is algo (RHC,SA,GA) #runs #samples #iters outfile.mat (SA and GA) param1  (GA Only) param2 param3");
+                System.exit(1);
+            }
+            else
+            {
+                GA_enabled = true;
+                GA_population = Integer.parseInt(args[5]);
+                GA_toMate =  Integer.parseInt(args[6]);
+                GA_toMutate = Integer.parseInt(args[7]);
+            }
+        }
         totalTrainingIterations = numIters;
         totalRuns =numRuns; numPercentages= numSamples;
+//        enabled[0] = RHC_enabled;
+//        enabled[1] = SA_enabled;
+//        enabled[2] = GA_enabled;
+
         matlabWriter = new MatlabWriter(outfile, numPercentages, totalRuns);
         for (int i = 0; i < totalRuns; i++) {
             doIt();
