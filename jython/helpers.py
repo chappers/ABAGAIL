@@ -4,7 +4,7 @@ import opt.SimulatedAnnealing as SimulatedAnnealing
 import shared.FixedIterationTrainer as FixedIterationTrainer
 import opt.ga.StandardGeneticAlgorithm as StandardGeneticAlgorithm
 import util.ABAGAILArrays as ABAGAILArrays
-
+import sys
 import opt.prob.MIMIC as MIMIC
 from array import array
 
@@ -18,38 +18,45 @@ __author__ = 'Ramy'
 def savePath2Matlab(name, path, points, num, mat):
     xrow =2*(num)
     yrow = xrow+1
+    xVec = []
+    yVec = []
     for i in range(0,len(path)):
         p = path[i]
         t= points[p]
-        x = points[path[i]][0]
-        y = points[path[i]][1]
-        mat.addValue(x, name,xrow )
-        mat.addValue(y, name,yrow )
-    #print path
+        xVec.append(t[0])
+        yVec.append(t[1])
+    #mat.addValue(x, name,xrow )
+    #mat.addValue(y, name,yrow )
+    saveFit(name, xVec, xrow, mat)
+    saveFit(name, yVec, yrow, mat)
+
 
 
 def saveFit(name, vec, num, mat):
-    for i in vec :
+    for i in vec:
         mat.addValue(i,name,num)
 
 
-def TrainAndSave(experiment,points, fit, mat, name, runNum):
-    fitVec =[]
-    # for idx, iters in enumerate(paramRange):
-    fitness = fit.train()
-    fitVec.append(fitness)
+def getPath(experiment):
     path = []
-    if(isinstance(experiment, MIMIC)):
+    if (isinstance(experiment, MIMIC)):
         path = doMIMICExtraction(experiment)
     else:
         N = experiment.getOptimal().size()
         for x in range(0, N):
             path.append(experiment.getOptimal().getDiscrete(x))
+    return path
+
+
+def TrainAndSave(experiment,points, fit, mat, name, runNum):
+    # for idx, iters in enumerate(paramRange):
+    fitness = fit.train()
+    #TODO: do we even need this function anymore? it wo't help other problems. ditch it.
+    path = getPath(experiment)
     savePath2Matlab(name, path, points,runNum, mat)
     # mw.addValue(iters,"RHC_iterations",idx)
-    saveFit(name + "_fitness", fitVec, runNum, mat)
     #    print fitVec
-    return path
+    return fitness
 
 
 def floatRange(vec, scale, num):
@@ -60,15 +67,16 @@ def floatRange(vec, scale, num):
     return tmp
 
 
-def IterRangeExperiment(name, experiment, points, paramRange, mat, runNum):
+def IterRangeExperiment(name, experiment, points, paramRange, mat, row):
     totalSoFar =0
+    fitVec = []
     for idx, i in enumerate(paramRange):
         num = i-totalSoFar
         fit = FixedIterationTrainer(experiment,num)
         totalSoFar+=num;
-        path = TrainAndSave(experiment,points, fit, mat, name, runNum)
-    saveFit(name + "_iterations", paramRange, runNum, mat)
-    return path
+        fitness = TrainAndSave(experiment,points, fit, mat, name, row+ idx)
+        fitVec.append(fitness)
+    return fitVec
 
 
 def CoolingRangeExperiment(name,points, problem,coolingRange,iterRange, mat):
@@ -79,8 +87,14 @@ def CoolingRangeExperiment(name,points, problem,coolingRange,iterRange, mat):
 def MIMICSampleRangeExperiment(name, points,problem, sampleRange, iterRange, mat):
     for idx,i in enumerate(sampleRange):
         mimic = MIMIC(i, 20, problem)
-        IterRangeExperiment(name, mimic, points, iterRange, mat, idx)
+        fitVec = IterRangeExperiment(name, mimic, points, iterRange, mat, idx * len(iterRange))
+        row = idx;
+        saveFit(name + "_fitness", fitVec, idx, mat)
+        mat.write();
+        saveFit(name + "_iterations", iterRange, idx, mat)
+
     saveFit(name + "_numSamples", sampleRange,0, mat )
+
 
 def doMIMICExtraction(mimic):
         optimal = mimic.getOptimal()

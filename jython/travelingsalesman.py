@@ -2,7 +2,7 @@
 # This also prints the index of the points of the shortest route.
 # To make a plot of the route, write the points at these indexes
 # to a file and plot them in your favorite tool.
-import sys
+
 
 import java.util.Random as Random
 
@@ -48,26 +48,27 @@ for i in range(0, len(points)):
     points[i][0] = random.nextDouble()
     points[i][1] = random.nextDouble()
 
-ef = TravelingSalesmanRouteEvaluationFunction(points)
-odd = DiscretePermutationDistribution(N)
-nf = SwapNeighbor()
-mf = SwapMutation()
-cf = TravelingSalesmanCrossOver(ef)
-hcp = GenericHillClimbingProblem(ef, odd, nf)
-gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
-
-rhcWriter = MatlabWriter(OUTPUT, N, 2)
-rhcWriter.addValue(N,"numPoints",0)
-rhc = RandomizedHillClimbing(hcp)
-begin = 1
-end = 50000
-numSamples = 100
-step = (end - begin) / numSamples
 def PopulationRangeExperiment(name, ga, points, popRange, iterRange, mat):
     for idx,i in enumerate(popRange):
         helpers.IterRangeExperiment(name,ga,points,iterRange,mat,idx)
 
 if(DO_RHC):
+    ef = TravelingSalesmanRouteEvaluationFunction(points)
+    odd = DiscretePermutationDistribution(N)
+    nf = SwapNeighbor()
+    mf = SwapMutation()
+    cf = TravelingSalesmanCrossOver(ef)
+    hcp = GenericHillClimbingProblem(ef, odd, nf)
+    gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
+
+    rhcWriter = MatlabWriter(OUTPUT, N, 2)
+    rhcWriter.addValue(N,"numPoints",0)
+    rhc = RandomizedHillClimbing(hcp)
+    begin = 1
+    end = 50000
+    numSamples = 100
+    step = (end - begin) / numSamples
+
     path = helpers.IterRangeExperiment("RHC", rhc, points, range(begin, end, step), rhcWriter,0)
 
     print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
@@ -138,10 +139,10 @@ if(DO_MIMIC):
     keepVec = range(20, 1000, 50)
     iterVec = range(10,1000,100)
 
-    r = len(samplesVec)
+    r = len(samplesVec)*len(iterVec)
     c = len(iterVec)
     mimicWriter = MatlabWriter("mimic_samplesVary.mat", r,c)
-
+    mimicWriter.addValue(N,"numPoints",0)
     helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)
     #mimic = MIMIC(200,20,pop)
     #path = helpers.IterRangeExperiment("MIMIC",mimic, points, range(100,200,50), mimicWriter,0)

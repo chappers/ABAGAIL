@@ -20,6 +20,7 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 
 public class MatlabWriter {
+    private Boolean DEBUG = false;
     private String outputFile =null;
 
     private Map<String, ArrayList<Vector<Double> >> map = new HashMap<String, ArrayList<Vector<Double> >>();
@@ -39,24 +40,31 @@ public class MatlabWriter {
         if(!map.containsKey(name))
         {
             map.put(name, new ArrayList<Vector<Double>>());
+            if(DEBUG) System.out.println("making a new arraylist entry " + name);
         }
-
-        if (map.get(name).size() <= runNumber)
+        ArrayList AL =  map.get(name);
+        map.get(name).size();
+//        Vector v = AL.get(runNumber);
+//        v.addElement();
+        while (map.get(name).size() <= runNumber)
         {
+            if(DEBUG) System.out.println("adding vector for " + name + " size is # " + map.get(name).size() + " <= "+ runNumber);
             map.get(name).add(new Vector<Double>());
+            if(DEBUG) System.out.println("   added vector for " + name + " size is # " + map.get(name).size());
         }
-
-        map.get(name).get(runNumber).add(val);
-
+        if(DEBUG) System.out.println("adding value for " + name + " with run # " + runNumber );
+        map.get(name).get(runNumber).addElement(val);
+        if(DEBUG) if(DEBUG) System.out.println("    added. Length is now  " + map.get(name).get(runNumber).size());
     }
 
     public List<MLDouble> makeList() {
         //for (HashMap.Entry<String, Classifier> cursor : classifiers.entrySet())
 
         List<MLDouble> list = new ArrayList<MLDouble>();
-        int largest = -1;
+
         for (HashMap.Entry<String, ArrayList<Vector<Double>>> cursor : map.entrySet())
         {
+            int largest = -1;
             int r, c;
 
             r = cursor.getValue().size();
@@ -67,6 +75,7 @@ public class MatlabWriter {
                 if (vec.size() > largest)
                 {
                     largest = vec.size();
+                    if(DEBUG) System.out.println("largest is " + largest + " from " + cursor.getKey());
                 }
 
             }
@@ -74,6 +83,7 @@ public class MatlabWriter {
             c = largest;
 
             int[] dims = {r ,c};
+            if(DEBUG) System.out.println("making MLDouble w dims {" + r + "," + c +"}");
             MLDouble tmp = new MLDouble(cursor.getKey(),dims);
             int i=0;
             int j=0;
@@ -87,6 +97,7 @@ public class MatlabWriter {
                 {
                     tmp.set(d, i,j++);
                 }
+                if(DEBUG) System.out.println("j is " + j);
                 i++;
 /*
                 for (int i=0; i < r; i++)
@@ -102,30 +113,30 @@ public class MatlabWriter {
 
             }
 
-            Double[] foo;
-            foo = allValues.toArray(new Double[r * c]);
+//            Double[] foo;
+//            foo = allValues.toArray(new Double[r * c]);
 
 
             //Vector<Double> theValues = new Vector<Double>();
             //theValues.addAll(allValues);
 
 
-            int numel = r * c;
+//            int numel = r * c;
 
-            int man = allValues.size();
-            int size = r*c;
+//            int man = allValues.size();
+//            int size = r*c;
             //String str = helpers"MakeList r="+ r +" c="+ c+" size="+size;
             //str+="\nfoo:"+ Double.toString(foo);
             //str+= "\n Allvalues: " + allValues;
-            //System.out.println(str);
+            //if(DEBUG) System.out.println(str);
 
             //MLDouble tmp = new MLDouble(cursor.getKey(), allValues.toArray( new Double[size]), r);
             //MLDouble tmp = new MLDouble(cursor.getKey(), theValues.toArray( new Double[theValues.size()]), r);
-            //System.out.println(tmp.contentToString());
+            //if(DEBUG) System.out.println(tmp.contentToString());
            list.add(tmp);
         }
 
-        //System.out.println(list.get(0).contentToString());
+        //if(DEBUG) System.out.println(list.get(0).contentToString());
         return list;
     }
        /*
@@ -150,7 +161,7 @@ public class MatlabWriter {
         Vector<Double>  TrainingErrorVec = new Vector<Double> (test.numInstances());
         Vector<Double>  TrainingErrorPctVec = new Vector<Double> (test.numInstances());
         Vector<Double>  TestErrorPctVec = new Vector<Double> (test.numInstances());
-        //System.out.println(runNumber + " " + train.instance(0).toString());
+        //if(DEBUG) System.out.println(runNumber + " " + train.instance(0).toString());
         int maxtrainingSetSize = mySplitter.numInstances();
 
 
@@ -159,7 +170,7 @@ public class MatlabWriter {
         for(int percent=percentBegin; percent <= 100 ; percent = min(percent + percentIncrement, 101))
         {
             int tmpSize = (int) ceil(train.numInstances() * percent / 100.0);
-            //System.out.println(tmpSize);
+            //if(DEBUG) System.out.println(tmpSize);
             PercentTrainAndTest TrainAndTest;
             TrainAndTest = new PercentTrainAndTest(this.classifier, tmpSize, train, test);
             double TrainingError;
