@@ -40,8 +40,8 @@ DO_MIMIC = True
 OUTPUT = 'rhc.mat'
 
 # set N value.  This is the number of points
-N = 25
-random = Random()
+N = 10
+random = Random(3)
 
 points = [[0 for x in xrange(2)] for x in xrange(N)]
 for i in range(0, len(points)):
@@ -135,20 +135,16 @@ if(DO_MIMIC):
     df = DiscreteDependencyTree(.1, ranges)
     pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
 
-    samplesVec = range(100, 1000, 100)
-    keepVec = range(20, 1000, 50)
-    iterVec = range(10,1000,100)
+    samplesVec = range(5, 200, 50)
+    keepVec = range(1, 100, 25)
+    iterVec = range(1,100,25)
 
     r = len(samplesVec)*len(iterVec)
     c = len(iterVec)
     mimicWriter = MatlabWriter("mimic_samplesVary.mat", r,c)
     mimicWriter.addValue(N,"numPoints",0)
-    helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)
-    #mimic = MIMIC(200,20,pop)
-    #path = helpers.IterRangeExperiment("MIMIC",mimic, points, range(100,200,50), mimicWriter,0)
-    #fit = FixedIterationTrainer(mimic, 1000)
-    #fit.train()
-
+    #helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)
+    helpers.MIMICAllRangeExperiment("MIMIC", points, pop, samplesVec, keepVec, iterVec, mimicWriter)
 
     mimicWriter.write()
     print "All Done! Bye now :)"
