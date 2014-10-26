@@ -1,5 +1,5 @@
 clear variables; close all;
-colors = gray(5);
+colors = hot;
 path=load('jython/mimic_samplesVary.mat');
 colordef white
 set(0,'DefaultFigureWindowStyle','docked')
@@ -48,6 +48,7 @@ for r = 1:numel(routes)
       
       %%
       hold all
+      
       cols = N;%length(path.(n));
       rows = size(p,1)/2; %length(path.(curves{1}))%length(path.RHC_fitness);
       for j = 1:rows
@@ -56,15 +57,16 @@ for r = 1:numel(routes)
           yInd = xInd+1;
           X = p(xInd,1:cols);
           Y = p(yInd,1:cols);
-          Z = (j/10)*ones(cols,1);
-          scatter3(X, Y, Z,'filled','r') ,   plot3(X, Y,Z)% 'Color', colors(64,:));
-          drawnow;
+          Z = (j/2)*ones(cols,1);
+          %scatter3(X, Y, Z,'filled','r') ,   
+          plot3(X, Y,Z,'Color', colors(j,:),'LineWidth',5);
+          %drawnow;
       end     %%
       X = path.MIMIC_best(1,:);
       Y = path.MIMIC_best(2,:);
       Z = (j/10)*ones(cols,1)
-      scatter3(X, Y, Z ,'filled','r')
-      plot3(X,Y,Z,'b','LineWidth',5);
+      %scatter3(X, Y, Z ,'filled','r')
+      %plot3(X,Y,Z,'b','LineWidth',5);
   hold off
 
 end
