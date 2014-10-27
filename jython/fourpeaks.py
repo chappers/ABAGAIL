@@ -32,14 +32,21 @@ import opt.prob.GenericProbabilisticOptimizationProblem as GenericProbabilisticO
 import opt.prob.MIMIC as MIMIC
 import opt.prob.ProbabilisticOptimizationProblem as ProbabilisticOptimizationProblem
 import shared.FixedIterationTrainer as FixedIterationTrainer
-
+import time
+import helpers as helpers
 from array import array
-
+import MatlabWriter
 """
 Commandline parameter(s):
    none
 """
 
+DO_RHC = True
+DO_SA = True
+DO_GA = True
+DO_MIMIC = True
+
+test = False
 N=200
 T=N/5
 fill = [2] * N
@@ -54,24 +61,50 @@ df = DiscreteDependencyTree(.1, ranges)
 hcp = GenericHillClimbingProblem(ef, odd, nf)
 gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
-
 rhc = RandomizedHillClimbing(hcp)
-fit = FixedIterationTrainer(rhc, 200000)
-fit.train()
-print "RHC: " + str(ef.value(rhc.getOptimal()))
-cooling = .95
-SA_iters = 20000
-sa = SimulatedAnnealing(1E11, cooling, hcp)
-fit = FixedIterationTrainer(sa, SA_iters)
-fit.train()
-print "SA: " + str(ef.value(sa.getOptimal()))
+filepath = "4P/"
+if DO_RHC:
+    if test:
+        begin = 1
+        end = 500
+        numSamples = 10
+    else:
+        begin = 1
+        end = 50000
+        numSamples = 100
 
-ga = StandardGeneticAlgorithm(200, 100, 10, gap)
-fit = FixedIterationTrainer(ga, 1000)
-fit.train()
-print "GA: " + str(ef.value(ga.getOptimal()))
+    step = (end - begin) / numSamples
 
-mimic = MIMIC(200, 20, pop)
-fit = FixedIterationTrainer(mimic, 1000)
-fit.train()
-print "MIMIC: " + str(ef.value(mimic.getOptimal()))
+    rhcWriter = MatlabWriter(filepath+"RHC_"+str(N)+".mat", N, 2)
+    rhcWriter.addValue(N,"numPoints",0)
+
+    start = time.time()
+    helpers.IterRangeExperiment("RHC", rhc, ranges, range(begin, end, step), rhcWriter, 0)
+    t= time.time() - start
+
+    rhcWriter.addValue(t, "RHC_runtime", 0)
+    rhcWriter.write()
+
+#    fit = FixedIterationTrainer(rhc, 200000)
+#    fit.train()
+#    print "RHC: " + str(ef.value(rhc.getOptimal()))
+
+if DO_SA:
+    cooling = .95
+    SA_iters = 20000
+    sa = SimulatedAnnealing(1E11, cooling, hcp)
+    fit = FixedIterationTrainer(sa, SA_iters)
+    fit.train()
+    print "SA: " + str(ef.value(sa.getOptimal()))
+
+if DO_GA:
+    ga = StandardGeneticAlgorithm(200, 100, 10, gap)
+    fit = FixedIterationTrainer(ga, 1000)
+    fit.train()
+    print "GA: " + str(ef.value(ga.getOptimal()))
+
+if DO_MIMIC:
+    mimic = MIMIC(200, 20, pop)
+    fit = FixedIterationTrainer(mimic, 1000)
+    fit.train()
+    print "MIMIC: " + str(ef.value(mimic.getOptimal()))

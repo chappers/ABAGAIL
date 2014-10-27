@@ -2,13 +2,14 @@ from math import ceil
 
 import opt.SimulatedAnnealing as SimulatedAnnealing
 import shared.FixedIterationTrainer as FixedIterationTrainer
+import util.linalg.DenseVector as DenseVector
 import opt.ga.StandardGeneticAlgorithm as StandardGeneticAlgorithm
 import util.ABAGAILArrays as ABAGAILArrays
 import sys
 import time
 import opt.prob.MIMIC as MIMIC
 from array import array
-
+import MatlabWriter
 # from opt.SimulatedAnnealing import SimulatedAnnealing as SimulatedAnnealing
 #from shared.FixedIterationTrainer import FixedIterationTrainer as FixedIterationTrainer
 
@@ -33,12 +34,18 @@ def savePath2Matlab(name, path, points, num, mat):
 
 
 def saveFit(name, vec, num, mat):
-    for i in vec:
-        mat.addValue(i, name, num)
+    if isinstance(vec,DenseVector):
+        for i in range (vec.size()):
+            val = vec.get(i)
+            mat.addValue(val, name, num)
+    else:
+        for i in vec:
+            mat.addValue(i, name, num)
 
 
 def getPath(experiment):
     path = []
+
     if (isinstance(experiment, MIMIC)):
         path = doMIMICExtraction(experiment)
     else:
@@ -49,13 +56,16 @@ def getPath(experiment):
 
 
 def TrainAndSave(experiment, points, fit, mat, name, runNum):
+    #TODO: do we even need this function anymore? it won't help other problems. ditch it?
     # for idx, iters in enumerate(paramRange):
     start = time.time()
     fitness = fit.train()
     t = time.time() - start
-    #TODO: do we even need this function anymore? it won't help other problems. ditch it?
-    path = getPath(experiment)
-    savePath2Matlab(name, path, points, runNum, mat)
+    if not isinstance(points[0], int):
+        path = getPath(experiment)
+        savePath2Matlab(name, path, points, runNum, mat)
+    else:
+        saveFit(name, experiment.getOptimal().getData(), runNum, mat)
     # mw.addValue(iters,"RHC_iterations",idx)
     #    print fitVec
     return fitness, t
