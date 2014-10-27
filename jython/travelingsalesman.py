@@ -30,77 +30,113 @@ import helpers
 import MatlabWriter
 from array import array
 import getopt as getopt
+import time
 
 
 
-DO_RHC = False
-DO_SA = False
-DO_GA = False
+DO_RHC = True
+DO_SA = True
+DO_GA = True
 DO_MIMIC = True
-OUTPUT = 'rhc.mat'
 
+test = False
 # set N value.  This is the number of points
-N = 10
+N = 4
 random = Random(3)
+for arg in sys.argv:
+    print arg
+
+foo = len(sys.argv)
+bar = sys.argv[foo-1]
+print "got N as "+ str(bar)
 
 points = [[0 for x in xrange(2)] for x in xrange(N)]
 for i in range(0, len(points)):
     points[i][0] = random.nextDouble()
     points[i][1] = random.nextDouble()
 
-def PopulationRangeExperiment(name, ga, points, popRange, iterRange, mat):
+def PopulationRangeExperiment(name,  points, popRange, mateRange, mutRange, iterRange, mat):
+    lastRow = -1
     for idx,i in enumerate(popRange):
-        helpers.IterRangeExperiment(name,ga,points,iterRange,mat,idx)
+        for jdx, j in enumerate(mateRange):
+            for kdx, k in enumerate(mutRange):
+                row = idx * len(mateRange)*len(mutRange) + jdx*len(mutRange)+ kdx
+                if row < lastRow:
+                    print "ERROR in ROW CALC!"
+                lastRow = row
+                if j > i or k > i:
+                    #print "skipping bad values for i,j,k "
+                    continue
+                ga = StandardGeneticAlgorithm(i, j, k, gap)
+                helpers.IterRangeExperiment(name, ga, points, iterRange, mat, row)
 
-if(DO_RHC):
-    ef = TravelingSalesmanRouteEvaluationFunction(points)
-    odd = DiscretePermutationDistribution(N)
-    nf = SwapNeighbor()
-    mf = SwapMutation()
-    cf = TravelingSalesmanCrossOver(ef)
-    hcp = GenericHillClimbingProblem(ef, odd, nf)
-    gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 
-    rhcWriter = MatlabWriter(OUTPUT, N, 2)
+ef = TravelingSalesmanRouteEvaluationFunction(points)
+odd = DiscretePermutationDistribution(N)
+nf = SwapNeighbor()
+mf = SwapMutation()
+cf = TravelingSalesmanCrossOver(ef)
+hcp = GenericHillClimbingProblem(ef, odd, nf)
+
+if DO_RHC:
+
+    if test:
+        begin = 1
+        end = 500
+        numSamples = 10
+
+    else:
+        begin = 1
+        end = 50000
+        numSamples = 100
+
+    step = (end - begin) / numSamples
+
+    rhcWriter = MatlabWriter("RHC_"+str(N)+".mat", N, 2)
     rhcWriter.addValue(N,"numPoints",0)
     rhc = RandomizedHillClimbing(hcp)
-    begin = 1
-    end = 50000
-    numSamples = 100
-    step = (end - begin) / numSamples
 
-    path = helpers.IterRangeExperiment("RHC", rhc, points, range(begin, end, step), rhcWriter,0)
+    start = time.time()
+    helpers.IterRangeExperiment("RHC", rhc, points, range(begin, end, step), rhcWriter, 0)
+    t= time.time() - start
 
-    print "RHC Inverse of Distance: " + str(ef.value(rhc.getOptimal()))
-    print "Route:"
-    print path
+    rhcWriter.addValue(t, "RHC_runtime", 0)
     rhcWriter.write()
 
-if(DO_SA):
-    begin = 1
-    end = 10000
-    numSamples = 300
-    step = (end - begin) / numSamples
-    SA_cooling = .695
-    iterVec = range(begin, end, step)
+if DO_SA:
+    if test:
+        begin = 1
+        end = 100
+        numSamples = 10
+        coolingRange = helpers.floatRange(range(50000, 99999), 100000, 10)
+        coolingIters = range(1, 200, 10)
+    else:
+        begin = 1
+        end = 10000
+        numSamples = 300
+        coolingRange = helpers.floatRange(range(50000, 99999), 100000, 50)
+        coolingIters = range(1, 10000, 500)
 
-    sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
-    saWriter = MatlabWriter("ts_sa.mat", N, 2)
+
+#    step = (end - begin) / numSamples
+#    SA_cooling = .695
+#    iterVec = range(begin, end, step)
+#    sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
+
+    saWriter = MatlabWriter("SA_"+str(N)+".mat", N, 2)
     saWriter.addValue(N,"numPoints",0)
-    path = helpers.IterRangeExperiment("SA",sa,points,iterVec, saWriter,0)
-    coolingRange = helpers.floatRange(range(50000, 99999), 100000, 50)
-    coolingIters = range(1, 10000, 500)
-    helpers.CoolingRangeExperiment("SA_cooling", points, hcp, coolingRange, coolingIters, saWriter)
+    #path = helpers.IterRangeExperiment("SA",sa,points,iterVec, saWriter, 0)
+    start = time.time()
+    helpers.CoolingRangeExperiment("SA", points, hcp, coolingRange, coolingIters, saWriter)
+    t = time.time() -start
+    saWriter.addValue(t,"SA_runtime", 0)
 
-    saWriter.write();
-    print "SA Inverse of Distance: " + str(ef.value(sa.getOptimal()))
-    print "Route:"
-    print path
-    print "writing GA MATLAB matrix"
+
+
     saWriter.write()
 
-if(DO_GA):
-
+if DO_GA:
+    gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
     #ga = StandardGeneticAlgorithm(2000, 1500, 250, gap)
     GA_population =2000
     GA_toMate =1500
@@ -111,21 +147,35 @@ if(DO_GA):
     begin = 100;
     end = 2200
     step =200;
-    GAiterVec = range(begin, end, step)
-    populationRange = range(5, 1000, 100)
+
+
+    if test:
+        GAiterVec = range(1, 10, 2)
+        populationRange = range(5, 100, 10)
+        mateRange = range(1, 10, 5)
+        mutationRange = range(1, 10, 5)
+    else:
+        GAiterVec = range(begin, end, step)
+        populationRange = range(5, 10000, 500)
+        mateRange = range(5, 9000, 500)
+        mutationRange = range(5, 9000, 500)
+
     r = len(populationRange)
     c = len(GAiterVec)
-    gaWriter = MatlabWriter("ga.mat",r,c)
+    gaWriter = MatlabWriter("GA_"+str(N)+".mat",r,c)
     gaWriter.addValue(N,"numPoints",0)
-    path = helpers.IterRangeExperiment("GA",ga,points,GAiterVec, gaWriter,0)
-    #PopulationRangeExperiment("GA", ga, points, populationRange, GAiterVec, gaWriter)
-    #ga.populationSize=1;
+
+    #path = helpers.IterRangeExperiment("GA",ga,points,GAiterVec, gaWriter,0)
+    start = time.time()
+    PopulationRangeExperiment("GA", points, populationRange,mateRange,mutationRange, GAiterVec, gaWriter)
+    t= time.time() - start
     print "writing GA MATLAB matrix"
+    gaWriter.addValue(t,"GA_runtime",0)
     gaWriter.write()
 
     #save2matlab("SA", path)
 
-if(DO_MIMIC):
+if DO_MIMIC:
 
     ##  for mimic we use a sort encoding
     ef = TravelingSalesmanSortEvaluationFunction(points)
@@ -135,17 +185,25 @@ if(DO_MIMIC):
     df = DiscreteDependencyTree(.1, ranges)
     pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
 
-    samplesVec = range(5, 200, 50)
-    keepVec = range(1, 100, 25)
-    iterVec = range(1,100,25)
+
+    if test:
+        samplesVec = range(5, 200, 50)
+        keepVec = range(1, 200, 50)
+        iterVec = range(1, 100, 50)
+    else:
+        samplesVec = range(5, 2000, 50)
+        keepVec = range(1, 1900, 300)
+        iterVec = range(1, 10000, 500)
 
     r = len(samplesVec)*len(iterVec)
     c = len(iterVec)
-    mimicWriter = MatlabWriter("mimic_samplesVary.mat", r,c)
+    mimicWriter = MatlabWriter("MIMIC_"+str(N)+".mat", r,c)
     mimicWriter.addValue(N,"numPoints",0)
     #helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)
+    start = time.time()
     helpers.MIMICAllRangeExperiment("MIMIC", points, pop, samplesVec, keepVec, iterVec, mimicWriter)
-
+    t= time.time() - start
+    mimicWriter.addValue(t,"MIMIC_runtime", 0)
     mimicWriter.write()
     print "All Done! Bye now :)"
     sys.exit()

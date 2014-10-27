@@ -5,6 +5,7 @@ import shared.FixedIterationTrainer as FixedIterationTrainer
 import opt.ga.StandardGeneticAlgorithm as StandardGeneticAlgorithm
 import util.ABAGAILArrays as ABAGAILArrays
 import sys
+import time
 import opt.prob.MIMIC as MIMIC
 from array import array
 
@@ -49,13 +50,15 @@ def getPath(experiment):
 
 def TrainAndSave(experiment, points, fit, mat, name, runNum):
     # for idx, iters in enumerate(paramRange):
+    start = time.time()
     fitness = fit.train()
-    #TODO: do we even need this function anymore? it wo't help other problems. ditch it.
+    t = time.time() - start
+    #TODO: do we even need this function anymore? it won't help other problems. ditch it?
     path = getPath(experiment)
     savePath2Matlab(name, path, points, runNum, mat)
     # mw.addValue(iters,"RHC_iterations",idx)
     #    print fitVec
-    return fitness
+    return fitness, t
 
 
 def floatRange(vec, scale, num):
@@ -69,13 +72,15 @@ def floatRange(vec, scale, num):
 def IterRangeExperiment(name, experiment, points, paramRange, mat, row):
     totalSoFar = 0
     fitVec = []
+    timeVec = []
     for idx, i in enumerate(paramRange):
         num = i - totalSoFar
         fit = FixedIterationTrainer(experiment, num)
         totalSoFar += num
         frow = row * len(paramRange) + idx
-        fitness = TrainAndSave(experiment, points, fit, mat, name, frow)
+        fitness, time = TrainAndSave(experiment, points, fit, mat, name, frow)
         fitVec.append(fitness)
+        timeVec.append(time)
     saveFit(name + "_fitness", fitVec, row, mat)
     saveFit(name + "_iterations", paramRange, row, mat)
     return fitVec
@@ -115,7 +120,7 @@ def MIMICAllRangeExperiment(name, points, problem, sampleRange, keepRange, iterR
         iVec =[]
         jVec =[]
         for jdx, j in enumerate(sampleRange):
-            fitVec = [];
+            fitVec = []
             row = idx * len(sampleRange) + jdx
             if j > i:
                 mimic = MIMIC(j, i, problem)

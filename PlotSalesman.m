@@ -1,5 +1,5 @@
 clear variables; close all;
-colors = hot;
+
 path=load('jython/mimic_samplesVary.mat');
 colordef white
 set(0,'DefaultFigureWindowStyle','docked')
@@ -29,6 +29,8 @@ for r = 1:numel(routes)
       
       [F, sortInd] = sort(fitness(:));
       f= reshape(F, size(fitness'));
+      %f( :, ~any(f,1)) = [];
+
       plot(f');
    
       %end
@@ -51,6 +53,7 @@ for r = 1:numel(routes)
       
       cols = N;%length(path.(n));
       rows = size(p,1)/2; %length(path.(curves{1}))%length(path.RHC_fitness);
+      colors = parula(rows);
       for j = 1:rows
           %p = path.(names{i});
           xInd= (j-1)*2 +1;
