@@ -59,13 +59,14 @@ def TrainAndSave(experiment, points, fit, mat, name, runNum):
     #TODO: do we even need this function anymore? it won't help other problems. ditch it?
     # for idx, iters in enumerate(paramRange):
     start = time.time()
-    fitness = fit.train()
+    f = fit.train()
+    fitness = experiment.getOptimizationProblem().value(experiment.getOptimal());
     t = time.time() - start
     if not isinstance(points[0], int):
         path = getPath(experiment)
         savePath2Matlab(name, path, points, runNum, mat)
     else:
-        saveFit(name, experiment.getOptimal().getData(), runNum, mat)
+        saveFit(name,experiment.getOptimal().getData(), runNum, mat)
     # mw.addValue(iters,"RHC_iterations",idx)
     #    print fitVec
     return fitness, t
@@ -101,6 +102,21 @@ def CoolingRangeExperiment(name, points, problem, coolingRange, iterRange, mat):
         sa = SimulatedAnnealing(1E15, i, problem)
         IterRangeExperiment(name, sa, points, iterRange, mat, idx)
     saveFit(name + "_coolingValues", coolingRange, 0, mat)
+
+def PopulationRangeExperiment(name, gap,  points, popRange, mateRange, mutRange, iterRange, mat):
+    lastRow = -1
+    for idx,i in enumerate(popRange):
+        for jdx, j in enumerate(mateRange):
+            for kdx, k in enumerate(mutRange):
+                row = idx * len(mateRange)*len(mutRange) + jdx*len(mutRange)+ kdx
+                if row < lastRow:
+                    print "ERROR in ROW CALC!"
+                lastRow = row
+                if j > i or k > i:
+                    #print "skipping bad values for i,j,k "
+                    continue
+                ga = StandardGeneticAlgorithm(i, j, k, gap)
+                IterRangeExperiment(name, ga, points, iterRange, mat, row)
 
 
 def MIMICSampleRangeExperiment(name, points, problem, sampleRange, iterRange, mat):
@@ -146,15 +162,15 @@ def MIMICAllRangeExperiment(name, points, problem, sampleRange, keepRange, iterR
             jVec.append(j)
             saveFit(name + "_sampleSize", iVec, idx*len(sampleRange)+jdx, mat)
             saveFit(name + "_keep", jVec, idx*len(sampleRange)+jdx, mat)
-            if len(fitVec) >0 and  max(fitVec) > currmax:
-                currmax = max(fitVec)
-                bestSampleSize = jdx
-                bestKeep = idx
-                bestPath = getPath(mimic)
-    print "MIMIC: best Sample Size found at index " + str(bestSampleSize) + " value " + str(sampleRange[bestSampleSize])
-    print "MIMIC: best Keep found at " + str(bestKeep) + " value " + str(keepRange[bestKeep])
-    print "peak fitness " + str(currmax)
-    savePath2Matlab(name + "_best", bestPath,points, 0, mat)
+    #         if len(fitVec) >0 and  max(fitVec) > currmax:
+    #             currmax = max(fitVec)
+    #             bestSampleSize = jdx
+    #             bestKeep = idx
+    #             bestPath = getPath(mimic)
+    # print "MIMIC: best Sample Size found at index " + str(bestSampleSize) + " value " + str(sampleRange[bestSampleSize])
+    # print "MIMIC: best Keep found at " + str(bestKeep) + " value " + str(keepRange[bestKeep])
+    # print "peak fitness " + str(currmax)
+    # savePath2Matlab(name + "_best", bestPath,points, 0, mat)
 
 
 

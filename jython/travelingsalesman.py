@@ -32,6 +32,20 @@ from array import array
 import getopt as getopt
 import time
 
+def PopulationRangeExperiment(name,  points, popRange, mateRange, mutRange, iterRange, mat):
+    lastRow = -1
+    for idx,i in enumerate(popRange):
+        for jdx, j in enumerate(mateRange):
+            for kdx, k in enumerate(mutRange):
+                row = idx * len(mateRange)*len(mutRange) + jdx*len(mutRange)+ kdx
+                if row < lastRow:
+                    print "ERROR in ROW CALC!"
+                lastRow = row
+                if j > i or k > i:
+                    #print "skipping bad values for i,j,k "
+                    continue
+                ga = StandardGeneticAlgorithm(i, j, k, gap)
+                helpers.IterRangeExperiment(name, ga, points, iterRange, mat, row)
 
 
 DO_RHC = True
@@ -55,20 +69,6 @@ for i in range(0, len(points)):
     points[i][0] = random.nextDouble()
     points[i][1] = random.nextDouble()
 
-def PopulationRangeExperiment(name,  points, popRange, mateRange, mutRange, iterRange, mat):
-    lastRow = -1
-    for idx,i in enumerate(popRange):
-        for jdx, j in enumerate(mateRange):
-            for kdx, k in enumerate(mutRange):
-                row = idx * len(mateRange)*len(mutRange) + jdx*len(mutRange)+ kdx
-                if row < lastRow:
-                    print "ERROR in ROW CALC!"
-                lastRow = row
-                if j > i or k > i:
-                    #print "skipping bad values for i,j,k "
-                    continue
-                ga = StandardGeneticAlgorithm(i, j, k, gap)
-                helpers.IterRangeExperiment(name, ga, points, iterRange, mat, row)
 
 
 ef = TravelingSalesmanRouteEvaluationFunction(points)
@@ -102,7 +102,7 @@ if DO_RHC:
 
     rhcWriter.addValue(t, "RHC_runtime", 0)
     rhcWriter.write()
-
+    print "RHC done"
 if DO_SA:
     if test:
         begin = 1
@@ -118,7 +118,7 @@ if DO_SA:
         coolingIters = range(1, 10000, 500)
 
 
-#    step = (end - begin) / numSamples
+    #    step = (end - begin) / numSamples
 #    SA_cooling = .695
 #    iterVec = range(begin, end, step)
 #    sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
@@ -130,7 +130,7 @@ if DO_SA:
     helpers.CoolingRangeExperiment("SA", points, hcp, coolingRange, coolingIters, saWriter)
     t = time.time() -start
     saWriter.addValue(t,"SA_runtime", 0)
-
+    print "SA done"
 
 
     saWriter.write()
@@ -141,12 +141,12 @@ if DO_GA:
     GA_population =2000
     GA_toMate =1500
     GA_toMutate=250
-    GA_iters=20000;
+    GA_iters=20000
     ga = StandardGeneticAlgorithm(GA_population, GA_toMate, GA_toMutate, gap)
 
-    begin = 100;
+    begin = 100
     end = 2200
-    step =200;
+    step =200
 
 
     if test:

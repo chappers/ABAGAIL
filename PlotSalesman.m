@@ -1,14 +1,14 @@
 clear variables; close all;
 
 path=load('jython/mimic_samplesVary.mat');
-colordef white
+colordef black
 set(0,'DefaultFigureWindowStyle','docked')
 
 names = fieldnames(path);
 ax=[];
 %for i = 1:length(names)
 %  n = names{i};
-%routes = {'RHC', 'SA'};
+%routes = {'RHC', 'SA', 'GA', 'MIMIC'};
 routes = {'MIMIC'};
 N = path.numPoints;
 %%
