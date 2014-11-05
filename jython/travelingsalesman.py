@@ -70,6 +70,11 @@ for i in range(0, len(points)):
     points[i][1] = random.nextDouble()
 
 
+def makeFileName(file,N):
+    filepath = "TS/"
+    res = filepath + file + "_" + str(N)+ ".mat"
+    return res
+
 
 ef = TravelingSalesmanRouteEvaluationFunction(points)
 odd = DiscretePermutationDistribution(N)
@@ -92,7 +97,8 @@ if DO_RHC:
 
     step = (end - begin) / numSamples
 
-    rhcWriter = MatlabWriter("RHC_"+str(N)+".mat", N, 2)
+    f = makeFileName("RHC",N)
+    rhcWriter = MatlabWriter(f, N, 2)
     rhcWriter.addValue(N,"numPoints",0)
     rhc = RandomizedHillClimbing(hcp)
 
@@ -122,8 +128,8 @@ if DO_SA:
 #    SA_cooling = .695
 #    iterVec = range(begin, end, step)
 #    sa = SimulatedAnnealing(1E15, SA_cooling, hcp)
-
-    saWriter = MatlabWriter("SA_"+str(N)+".mat", N, 2)
+    f = makeFileName("SA",N)
+    saWriter = MatlabWriter(f, N, 2)
     saWriter.addValue(N,"numPoints",0)
     #path = helpers.IterRangeExperiment("SA",sa,points,iterVec, saWriter, 0)
     start = time.time()
@@ -162,7 +168,8 @@ if DO_GA:
 
     r = len(populationRange)
     c = len(GAiterVec)
-    gaWriter = MatlabWriter("GA_"+str(N)+".mat",r,c)
+    f = makeFileName("GA",N)
+    gaWriter = MatlabWriter(f,r,c)
     gaWriter.addValue(N,"numPoints",0)
 
     #path = helpers.IterRangeExperiment("GA",ga,points,GAiterVec, gaWriter,0)
@@ -197,6 +204,7 @@ if DO_MIMIC:
 
     r = len(samplesVec)*len(iterVec)
     c = len(iterVec)
+    f = makeFileName("MIMIC",N)
     mimicWriter = MatlabWriter("MIMIC_"+str(N)+".mat", r,c)
     mimicWriter.addValue(N,"numPoints",0)
     #helpers.MIMICSampleRangeExperiment("MIMIC", points, pop, samplesVec,iterVec, mimicWriter)

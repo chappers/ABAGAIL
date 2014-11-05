@@ -142,14 +142,16 @@ def MIMICAllRangeExperiment(name, points, problem, sampleRange, keepRange, iterR
     bestKeep = -1
     bestPath =[]
     lastRow = -1;
-    for idx, i in enumerate(keepRange):
+    for jdx, j in enumerate(sampleRange):
         iVec =[]
         jVec =[]
-        for jdx, j in enumerate(sampleRange):
+        for idx, i in enumerate(keepRange):    #percentage to keep
             fitVec = []
             row = idx * len(sampleRange) + jdx
-            if j > i:
-                mimic = MIMIC(j, i, problem)
+            keep = int(ceil(j*i)) #i is the percentage
+            print "samples " + str(j) + " keep " + str(keep)
+            if keep < j:  #TODO: no longer needed now that using % keep isntead of absolute
+                mimic = MIMIC(j, keep, problem)
 
                 if( row == lastRow):
                     print "Error! lastRow == row! "

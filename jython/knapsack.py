@@ -84,10 +84,10 @@ gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
 
 rhc = RandomizedHillClimbing(hcp)
-fit = FixedIterationTrainer(rhc, 200000)
+fit = FixedIterationTrainer(rhc, 2000000000)
 fit.train()
 print "RHC: " + str(ef.value(rhc.getOptimal()))
-
+sys.exit()
 sa = SimulatedAnnealing(100, .95, hcp)
 fit = FixedIterationTrainer(sa, 200000)
 fit.train()
