@@ -44,10 +44,11 @@ for r = 1:numel(routes)
       ax(end+1) = gca;
       %plot(path.RHC_fitness)
       foo = fitness';
-      [~,bar] = sort(foo(:));
+      [x,bar] = sort(foo(:));
       p = path.(routes{r});
       q = p(bar,:);
-      pcolor(q)
+      y =  q .*  repmat(foo(bar), 1,size(q,2));
+      pcolor(y(:,1:22))
       %p( ~any(p,2),:) = [];     
 
       

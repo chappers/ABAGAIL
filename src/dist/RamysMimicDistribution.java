@@ -17,15 +17,15 @@ public class RamysMimicDistribution extends AbstractDistribution {
      */
     //private int[] n;
     private Vector<Integer> n;
-    private Vector<Integer> pops;
-    private Vector<Integer> keeps;
-    private Vector<Integer> muts;
-    private Vector<Integer> its;
+    private Vector<Integer> pops = new Vector<Integer>() ;
+    private Vector<Integer> keeps= new Vector<Integer>() ;
+    private Vector<Integer> muts = new Vector<Integer>() ;
+    private Vector<Integer> its  = new Vector<Integer>() ;
 
     /**
      * The probabilites
      */
-    private Vector<Double>  p;
+    private Vector<Double>  p = new Vector<Double>();
     private  int  popBegin   ;
     private  int  popEnd     ;
     private  int  keepBegin  ;
@@ -48,27 +48,27 @@ public class RamysMimicDistribution extends AbstractDistribution {
         mutEnd =     n.get(5);
         itersBegin = n.get(6);
         itersEnd =   n.get(7);
-
+        System.out.println("Ramy's MIMIC Distribution at your service!");
         for(int i=popBegin; i<= popEnd; i++)
         {
             int idx = i - popBegin;
-            pops.set(idx,i);
+            pops.addElement(i);
         }
 
         for(int i=keepBegin; i<= keepEnd; i++)
         {
             int idx = i - keepBegin;
-            pops.set(idx,i);
+            pops.addElement(i);
         }
         for(int i=mutBegin; i<= mutEnd; i++)
         {
             int idx = i - mutBegin;
-            muts.set(idx,i);
+            muts.addElement(i);
         }
         for(int i=itersBegin; i<= itersEnd; i++)
         {
             int idx = i - itersBegin;
-            its.set(idx,i);
+            its.addElement(i);
         }
 
         double val = 1.f / pops.size();

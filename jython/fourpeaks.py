@@ -36,7 +36,7 @@ import time
 import helpers as helpers
 from array import array
 import MatlabWriter
-from travelingsalesman import PopulationRangeExperiment
+#from travelingsalesman import PopulationRangeExperiment
 """
 Commandline parameter(s):
    none
@@ -46,7 +46,7 @@ DO_RHC =   False #True
 DO_SA =    False #True
 DO_GA =    True
 DO_MIMIC = True
-test =     True
+test =     False
 N=200
 T=N/5
 fill = [2] * N
@@ -63,6 +63,23 @@ gap = GenericGeneticAlgorithmProblem(ef, odd, mf, cf)
 pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
 rhc = RandomizedHillClimbing(hcp)
 filepath = "4P/"
+
+def PopulationRangeExperiment(name,  points, popRange, mateRange, mutRange, iterRange, mat):
+    lastRow = -1
+    for idx,i in enumerate(popRange):
+        for jdx, j in enumerate(mateRange):
+            print('.')
+            for kdx, k in enumerate(mutRange):
+                row = idx * len(mateRange)*len(mutRange) + jdx*len(mutRange)+ kdx
+                if row < lastRow:
+                    print "ERROR in ROW CALC!"
+                lastRow = row
+                if j > i or k > i:
+                    #print "skipping bad values for i,j,k "
+                    continue
+                ga = StandardGeneticAlgorithm(i, j, k, gap)
+                helpers.IterRangeExperiment(name, ga, points, iterRange, mat, row)
+
 
 def makeFileName(file,N):
     res = filepath + file + "_" + str(N)+ ".mat"
@@ -92,9 +109,10 @@ if DO_RHC:
     rhcWriter.addValue(t, "RHC_runtime", 0)
     rhcWriter.write()
 
-    fit = FixedIterationTrainer(rhc, 200000)
-    fit.train()
-    print "RHC: " + str(ef.value(rhc.getOptimal()))
+    print "RHC done..." + str(f)
+    # fit = FixedIterationTrainer(rhc, 200000)
+    # fit.train()
+    # print "RHC: " + str(ef.value(rhc.getOptimal()))
 
 if DO_SA:
     if test:
@@ -119,13 +137,13 @@ if DO_SA:
     t = time.time() -start
     saWriter.addValue(t,"SA_runtime", 0)
     saWriter.write()
+    print "SA done..."  + str(f)
 
-
-    cooling = .95
-    sa = SimulatedAnnealing(1E11, cooling, hcp)
-    fit = FixedIterationTrainer(sa, 2000)
-    fit.train()
-    print "SA: " + str(ef.value(sa.getOptimal()))
+    # cooling = .95
+    # sa = SimulatedAnnealing(1E11, cooling, hcp)
+    # fit = FixedIterationTrainer(sa, 2000)
+    # fit.train()
+    # print "SA: " + str(ef.value(sa.getOptimal()))
 
 if DO_GA:
     begin = 100
@@ -153,22 +171,37 @@ if DO_GA:
     gaWriter.addValue(t,"GA_runtime", 0)
     gaWriter.write()
 
-    ga = StandardGeneticAlgorithm(200, 100, 10, gap)
-    fit = FixedIterationTrainer(ga, 1000)
-    fit.train()
-    print "GA: " + str(ef.value(ga.getOptimal()))
+    print "GA done..."  + str(f)
+    # ga = StandardGeneticAlgorithm(200, 100, 10, gap)
+    # fit = FixedIterationTrainer(ga, 1000)
+    # fit.train()
+    # print "GA: " + str(ef.value(ga.getOptimal()))
 
 if DO_MIMIC:
-    if test:
-        begin = 1
-        end = 500
-        numSamples = 10
-    else:
-        begin = 1
-        end = 50000
-        numSamples = 100
 
-    mimic = MIMIC(200, 20, pop)
-    fit = FixedIterationTrainer(mimic, 1000)
-    fit.train()
-    print "MIMIC: " + str(ef.value(mimic.getOptimal()))
+    if test:
+        samplesVec = range(1, 10, 2)
+        keepVec = range(1, 8, 2)
+        iterVec = range(10, 101, 10)
+    else:
+        samplesVec = range(5000, 20001, 5000)
+        keepVec = range(1000, 20001, 5000)
+        iterVec = range(1000, 100001, 10000)
+
+
+    f = makeFileName("MIMIC", N)
+    mimicWriter = MatlabWriter(f,N,2)
+    mimicWriter.addValue(N,"numPoints",0)
+
+    start = time.time()
+    helpers.MIMICAllRangeExperiment("MIMIC", ranges, pop, samplesVec, keepVec, iterVec, mimicWriter)
+    t = time.time() -start
+
+    mimicWriter.addValue(t,"MIMIC_runtime", 0)
+    mimicWriter.write()
+
+    print "MIMIC done: wrote " + str(f)
+    # mimic = MIMIC(200, 20, pop)
+    # fit = FixedIterationTrainer(mimic, 1000)
+    # fit.train()
+    #print "MIMIC: " + str(ef.value(mimic.getOptimal()))

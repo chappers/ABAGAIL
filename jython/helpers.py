@@ -162,8 +162,8 @@ def MIMICAllRangeExperiment(name, points, problem, sampleRange, keepRange, iterR
                 print "i <= j, skipping row " + str(row)
             iVec.append(i)
             jVec.append(j)
-            saveFit(name + "_sampleSize", iVec, idx*len(sampleRange)+jdx, mat)
-            saveFit(name + "_keep", jVec, idx*len(sampleRange)+jdx, mat)
+            saveFit(name + "_keep", iVec, idx*len(sampleRange)+jdx, mat)
+            saveFit(name + "_sampleSize", jVec, idx*len(sampleRange)+jdx, mat)
     #         if len(fitVec) >0 and  max(fitVec) > currmax:
     #             currmax = max(fitVec)
     #             bestSampleSize = jdx

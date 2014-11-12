@@ -16,7 +16,7 @@
   </component>
   <component name="FacetManager">
     <facet type="Python" name="Python">
-      <configuration sdkName="Jython 2.5.3 (~/jython2.5.3/bin/jython)" />
+      <configuration sdkName="Jython 2.5.4rc1 (~/jython2.5.4rc1/bin/jython)" />
     </facet>
   </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="true">
@@ -40,19 +40,9 @@
       <excludeFolder url="file://$MODULE_DIR$/src/com/jmatio" />
       <excludeFolder url="file://$MODULE_DIR$/src/data" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
-      <library name="ABAGAIL.jar">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/ABAGAIL.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="library" name="Jython 2.5.3 (~/jython2.5.3/bin/jython) interpreter library" level="application" />
-    <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../Common/JMatIO/lib/jmatio.jar!/" />
@@ -61,6 +51,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="Jython 2.5.4rc1 (~/jython2.5.4rc1/bin/jython) interpreter library" level="application" />
   </component>
   <component name="PackageRequirementsSettings">
     <option name="requirementsPath" value="$USER_HOME$/anaconda/lib/python2.7/site-packages/matplotlib" />
@@ -69,4 +60,3 @@
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />
   </component>
 </module>
-
