@@ -36,6 +36,7 @@ import opt.prob.GenericProbabilisticOptimizationProblem as GenericProbabilisticO
 import opt.prob.MIMIC as MIMIC
 import opt.prob.ProbabilisticOptimizationProblem as ProbabilisticOptimizationProblem
 import shared.FixedIterationTrainer as FixedIterationTrainer
+import shared.ConvergenceTrainer as ConvergenceTrainer
 import opt.example.CountOnesEvaluationFunction as CountOnesEvaluationFunction
 import dist.RamysMimicDistribution as RamysMimicDistribution
 import opt.example.RamysEvalMetaFunc as RamysEvalMetafunc
@@ -48,15 +49,36 @@ Commandline parameter(s):
    none
 """
 
-DO_RHC = True
-DO_SA = True
+DO_RHC = False
+DO_SA = False
 DO_GA = True
-DO_MIMIC = True
+DO_MIMIC = False
+TEST = False
 
+NUM_RIGHT = 5
+
+#GA_pop = 200*N
+GA_pop = 40000
+
+
+#problemSizes = range(200,0, -20)
+#problemSizes.reverse()
+
+problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 225, 300]# 350, 400, 600, 1000, 1500, 2000]
+
+if TEST:
+    problemSizes = [10, 20,25]
+
+maxProblem = problemSizes[-1]
+#doProblem(5)
+
+myWriter = MatlabWriter("C1s_"+str(maxProblem)+"x"+ str(NUM_RIGHT)+"correct.mat", len(problemSizes), 0)
+runNum = 0
 
 def makeProblem(num):
     global N
     N = num
+
     global fill
     fill = [2] * N
     global ranges
@@ -80,8 +102,9 @@ def makeProblem(num):
     global pop
     pop = GenericProbabilisticOptimizationProblem(ef, odd, df)
     global GA_pop
-
-
+    global myWriter, GA_iters, GA_mut, GA_keep
+    GA_keep = int(GA_pop *.75)
+    GA_mut = int(GA_pop *.15)
 
 
 def doProblem (num):
@@ -89,16 +112,29 @@ def doProblem (num):
     makeProblem(num)
 
     if DO_RHC:
+        start = time.time()
         RHC()
+        t = time.time() -start
+        myWriter.addValue(t, "RHC_experimentTime", 0)
 
     if DO_SA:
+        start = time.time()
         SA()
-
+        t = time.time() -start
+        myWriter.addValue(t, "SA_experimentTime", 0)
     if DO_GA:
+        start = time.time()
         GA()
-
+        t = time.time() -start
+        myWriter.addValue(t, "GA_experimentTime", 0)
+        #print "GA_experimentTime is " + str(t)
     if DO_MIMIC:
-        MIMIC()
+        start = time.time()
+        MIMICtest()
+        t = time.time() -start
+        myWriter.addValue(t, "MIMIC_experimentTime", 0)
+    global runNum
+    runNum +=1
 
 def RHC():
     correctCount = 0
@@ -110,19 +146,19 @@ def RHC():
         rhc = RandomizedHillClimbing(hcp)
         fit = FixedIterationTrainer(rhc, RHC_iters)
         start = time.time()
-        fit.train()
+        fitness = fit.train()
         t = time.time() - start
-        myWriter.addValue(fit, "RHC_fitness", 0)
-        myWriter.addValue(t, "RHC_searchTimes",0)
+        myWriter.addValue(fitness, "RHC_fitness", runNum)
+        myWriter.addValue(t, "RHC_searchTimes",runNum)
         v = ef.value(rhc.getOptimal())
         if v == N:
             correctCount += 1
         else:
             correctCount = 0
             RHC_iters += 1
-myWriter.addValue(t,"RHC_times",0)
-myWriter.addValue(int(RHC_iters),"RHC_iters",0)
-print str(N) + ": RHC: " + str(ef.value(rhc.getOptimal()))+" took "+str(t)+" seconds and " + str(RHC_iters) + " iterations"
+    myWriter.addValue(t,"RHC_times",0)
+    myWriter.addValue(int(RHC_iters),"RHC_iters",0)
+    print str(N) + ": RHC: " + str(ef.value(rhc.getOptimal()))+" took "+str(t)+" seconds and " + str(RHC_iters) + " iterations"
 
 def SA():
     SA_iters = 1
@@ -133,10 +169,10 @@ def SA():
         sa = SimulatedAnnealing(1e11, .85, hcp)
         start = time.time()
         fit = FixedIterationTrainer(sa, SA_iters)
-        fit.train()
+        fitness = fit.train()
         t = time.time() - start
-        myWriter.addValue(fit, "SA_fitness", 0)
-        myWriter.addValue(t, "SA_searchTimes",0)
+        myWriter.addValue(fitness, "SA_fitness", runNum)
+        myWriter.addValue(t, "SA_searchTimes",runNum)
         v = ef.value(sa.getOptimal())
         if v == N:
             correctCount += 1
@@ -150,39 +186,47 @@ def SA():
 def GA():
     correctCount = 0
     t=0
-    global GA_iters, GA_pop, GA_keep, GA_mut
-    while correctCount <= NUM_RIGHT and GA_iters <= 5000:
-        global ga
-        ga = StandardGeneticAlgorithm(GA_pop, GA_keep, GA_mut, gap)
+    #GA_iters=1
+    attempts = 0
+    threshold = .1
+    iters = 0
+    NUM_ITERS =10
+    global ga, GA_keep, GA_mut
+    ga = StandardGeneticAlgorithm(int(GA_pop), GA_keep, GA_mut, gap)
+    while correctCount < 1 and attempts <= 50000:
+        attempts +=1
         start = time.time()
-        fit = FixedIterationTrainer(ga, GA_iters)
-        fit.train()
-        myWriter.addValue(fit, "GA_fitness", 0)
-        myWriter.addValue(t, "GA_searchTimes",0)
-        t = time.time() - start
+        fit =ConvergenceTrainer(ga, threshold, NUM_ITERS)  #FixedIterationTrainer(ga, int(GA_iters))
+        fitness=fit.train()
+        iters += fit.getIterations()
+        myWriter.addValue(fitness, "GA_fitness", runNum)
+        myWriter.addValue(t, "GA_searchTimes",runNum)
+        t += time.time() - start
         v = ef.value(ga.getOptimal())
         if v == N:
             correctCount+= 1
             #print "GA correct with v  " + str(v) +" correctCount = "+ str (correctCount)
         else:
-            #print "GA wrong w/ iters " + str(GA_iters)
+            if fit.getIterations() < NUM_ITERS: #it hit its iters and still got it wrong, so the threshold was too low
+                threshold /= 10
             correctCount = 0
-            GA_pop +=10
-            GA_iters += 10
-            GA_mut = int(GA_pop * .25)
-            GA_keep = int(GA_pop * .80)
+            #GA_pop += N #5*N#*=1.2
+            #GA_iters *= 1.5
+           # GA_mut = int(GA_pop * .25)
+           #GA_keep = int(GA_pop * .80)
     myWriter.addValue(t,"GA_times",0)
-    myWriter.addValue(int(GA_iters),"GA_iters",0)
+    myWriter.addValue(iters,"GA_iters",0)
     myWriter.addValue(int(GA_pop),"GA_pop",0)
     myWriter.addValue(int(GA_mut),"GA_mut",0)
     myWriter.addValue(int(GA_keep),"GA_keep",0)
     print(str(N) + ": GA: " + str(ef.value(ga.getOptimal())) + " took " + str(t) + " seconds and "
-    + str(GA_iters) + " iters w/ pop " + str(GA_pop) + " mut " + str(GA_mut) + " keep "+ str(GA_keep))
+    + str(iters) + " iters w/ pop " + str(GA_pop) + " mut " + str(GA_mut) + " keep "+ str(GA_keep)+ " for fitness "
+    +str(fitness)+ " in " +str(attempts) + " attempts " + " thresh " + str(threshold) )
 
-def MIMIC():
+def MIMICtest():
     correctCount = 0
     MIMIC_iters = 10
-    MIMIC_samples = max(1,int(N/10))
+    MIMIC_samples = 5*N #max(1,int(N/10))
     MIMIC_keep = int(.1 * MIMIC_samples)
     t=0
     while correctCount <= NUM_RIGHT and MIMIC_iters <= 500:
@@ -190,9 +234,11 @@ def MIMIC():
         mimic = MIMIC(int(MIMIC_samples), int(MIMIC_keep), pop)
         start = time.time()
         fit = FixedIterationTrainer(mimic, int(MIMIC_iters))
-        fit.train()
+        fitness = fit.train()
         t = time.time() - start
         v = ef.value(mimic.getOptimal())
+        myWriter.addValue(fitness, "MIMIC_fitness", runNum)
+        myWriter.addValue(t, "MIMIC_searchTimes",runNum)
         if v==N:
             correctCount +=1
         else:
@@ -211,20 +257,7 @@ def MIMIC():
 #TODO: iterate over problem sizes, get wall time, parameters, and fitness function evaluations
 
 
-NUM_RIGHT = 5
-GA_iters= 1
-GA_pop = 1
-GA_keep =1
-GA_mut = 1
 
-#problemSizes = range(200,0, -20)
-#problemSizes.reverse()
-
-problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 225, 300, 350, 400, 600, 1000, 1500, 2000]
-problemSizes = [10, 20 ,30, 50]
-maxProblem = problemSizes[-1]
-#doProblem(5)
-myWriter = MatlabWriter("C1"+str(maxProblem)+"x"+ str(NUM_RIGHT)+"correct.mat", len(problemSizes), 0)
 
 for i in problemSizes:
     myWriter.addValue(i,"ProblemSize",0)

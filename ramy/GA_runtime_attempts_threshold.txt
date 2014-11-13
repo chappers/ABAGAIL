@@ -1,0 +1,24 @@
+/Users/Ramy/jython2.5.4rc1/bin/jython "-Dpython.path=/Users/Ramy/work/Georgia Tech/Machine Learning CS 7641/Common/JMatIO/lib/jmatio.jar:/Users/Ramy/work/Georgia Tech/Machine Learning CS 7641/Assignment 2/output/production/ABAGAIL" "/Users/Ramy/work/Georgia Tech/Machine Learning CS 7641/Assignment 2/ABAGAIL/jython/countones.py" 40
+Listening for transport dt_socket at address: 5005
+10: GA: 10.0 took 0.244999885559 seconds and 10 iters w/ pop 40000 mut 6000 keep 30000 for fitness 7.708525 in 1 attempts  thresh 0.1
+GA_experimentTime is 0.266999959946
+20: GA: 20.0 took 0.282999992371 seconds and 10 iters w/ pop 40000 mut 6000 keep 30000 for fitness 13.387625 in 1 attempts  thresh 0.1
+GA_experimentTime is 0.298000097275
+30: GA: 30.0 took 0.570000171661 seconds and 20 iters w/ pop 40000 mut 6000 keep 30000 for fitness 21.504725 in 2 attempts  thresh 0.1
+GA_experimentTime is 0.588999986649
+50: GA: 50.0 took 2.26900029182 seconds and 70 iters w/ pop 40000 mut 6000 keep 30000 for fitness 42.038975 in 7 attempts  thresh 0.1
+GA_experimentTime is 2.30599999428
+80: GA: 80.0 took 5.44599986076 seconds and 149 iters w/ pop 40000 mut 6000 keep 30000 for fitness 70.196175 in 15 attempts  thresh 0.01
+GA_experimentTime is 5.50500011444
+110: GA: 110.0 took 11.7900004387 seconds and 254 iters w/ pop 40000 mut 6000 keep 30000 for fitness 98.884775 in 26 attempts  thresh 0.001
+GA_experimentTime is 11.8659999371
+150: GA: 150.0 took 27.0690002441 seconds and 449 iters w/ pop 40000 mut 6000 keep 30000 for fitness 137.15725 in 46 attempts  thresh 0.0001
+GA_experimentTime is 27.1929998398
+180: GA: 180.0 took 61.289000988 seconds and 871 iters w/ pop 40000 mut 6000 keep 30000 for fitness 167.117825 in 89 attempts  thresh 0.0001
+GA_experimentTime is 61.4580001831
+225: GA: 225.0 took 182.476999044 seconds and 2151 iters w/ pop 40000 mut 6000 keep 30000 for fitness 209.704225 in 218 attempts  thresh 1e-06
+GA_experimentTime is 182.718999863
+300: GA: 300.0 took 22336.456003 seconds and 199738 iters w/ pop 40000 mut 6000 keep 30000 for fitness 279.0008 in 20005 attempts  thresh 1e-75
+GA_experimentTime is 22341.6210001
+
+Process finished with exit code 0

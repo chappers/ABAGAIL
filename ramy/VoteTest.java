@@ -116,7 +116,9 @@ public class VoteTest {
         enabled[1] = SA_enabled;
         enabled[2] = GA_enabled;
 
-        sampleTrainingPercentage(trainingSet);
+        DataSet foo = new DataSet(theInstances);
+        sampleTrainingPercentage(foo);
+        //sampleTrainingPercentage(trainingSet);
 
         runNumber++;
     }
@@ -170,9 +172,9 @@ public class VoteTest {
 
                 err = train(oa[i], incr);
                 iterCount += incr;
-                pctError= evalPercentError(oaNames[i]+"_trainingError", oa[i], networks[i], theInstances, iterCount,correct, incorrect);
+                pctError= evalPercentError(oaNames[i]+"_percentError", oa[i], networks[i],trainingSet.getInstances()  /*theInstances*/, iterCount,correct, incorrect);
 
-                double testError= evalPercentError(oaNames[i]+"_testError", oa[i], networks[i], testInstances, iterCount,correct, incorrect);
+                //double testError= evalPercentError(oaNames[i]+"_testError", oa[i], networks[i], testInstances, iterCount,correct, incorrect);
             }
             printResults(i, iterCount, correct, incorrect, pctError, err);
             end = System.nanoTime();
@@ -187,8 +189,7 @@ public class VoteTest {
     private static void printResults(int i, int howMany, double correct, double incorrect, double pctError, double err) {
         System.out.println("\nRun " + runNumber + "/" + totalRuns + " : " + howMany + " iterations" +
                 "\n---------------------------\nError results for " + oaNames[i] + " " + err);
-        results +=  "Correctly classified " + correct + " instances." +
-                "\nIncorrectly classified " + incorrect + " instances.\n" + oaNames[i]+ "Percent correctly classified: "
+        results += oaNames[i]+ " Percent correctly classified: "
                 + df.format(100 *(1 - pctError));// + "%\nTraining time: " + df.format(trainingTime)
         //+ " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
         System.out.println(results);
@@ -322,7 +323,7 @@ public class VoteTest {
         for(int i = 0; i < instances.length; i++) {
             instances[i] = new Instance(attributes[i][0]);
             // classifications range from 0 to 30; split into 0 - 14 and 15 - 30
-            //TODO: what  is this? Needs a fix.
+            //TODO: this is ugly. Needs a fix iff > 2 classes
             int label =attributes[i][1][0] < .5 ? 0 : 1 ;
             instances[i].setLabel( new Instance(label));
         }
