@@ -13,7 +13,9 @@ public class CountOnesEvaluationFunction implements EvaluationFunction {
     /**
      * @see opt.EvaluationFunction#value(opt.OptimizationData)
      */
+    private int totalCalls = 0;
     public double value(Instance d) {
+        this.totalCalls++;
         Vector data = d.getData();
         double val = 0;
         for (int i = 0; i < data.size(); i++) {
@@ -23,4 +25,7 @@ public class CountOnesEvaluationFunction implements EvaluationFunction {
         }
         return val;
     }
+
+    public int getTotalCalls() {return totalCalls; }
+    public void clearCount() {totalCalls = 0; }
 }

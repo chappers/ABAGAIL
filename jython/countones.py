@@ -49,13 +49,13 @@ Commandline parameter(s):
    none
 """
 
-DO_RHC = False
+DO_RHC = True
 DO_SA = False
-DO_GA = True
+DO_GA = False
 DO_MIMIC = False
 TEST = False
 
-NUM_RIGHT = 5
+NUM_RIGHT = 1
 
 #GA_pop = 200*N
 GA_pop = 40000
@@ -64,7 +64,10 @@ GA_pop = 40000
 #problemSizes = range(200,0, -20)
 #problemSizes.reverse()
 
-problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 225, 300]# 350, 400, 600, 1000, 1500, 2000]
+problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 200,225,250,275, 300]# GA stops here  350, 400, 600, 1000, 1500, 2000]
+problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 200,225,250,275, 500, 1000, 2000, 10000] # SA
+problemSizes = [10, 20 ,30, 50, 80, 110, 150, 180, 200,225,250,275, 500, 1000, 2000, 10000, 100000]#10000000] #RHC
+
 
 if TEST:
     problemSizes = [10, 20,25]
@@ -112,42 +115,55 @@ def doProblem (num):
     makeProblem(num)
 
     if DO_RHC:
+        ef.clearCount()
         start = time.time()
         RHC()
         t = time.time() -start
         myWriter.addValue(t, "RHC_experimentTime", 0)
+        myWriter.addValue(ef.getTotalCalls(),"RHC_funcEvals",runNum)
 
     if DO_SA:
+        ef.clearCount()
         start = time.time()
         SA()
         t = time.time() -start
         myWriter.addValue(t, "SA_experimentTime", 0)
+        myWriter.addValue(ef.getTotalCalls(),"SA_funcEvals",runNum)
     if DO_GA:
+        ef.clearCount()
         start = time.time()
         GA()
         t = time.time() -start
         myWriter.addValue(t, "GA_experimentTime", 0)
+        myWriter.addValue(ef.getTotalCalls(),"GA_funcEvals",runNum)
         #print "GA_experimentTime is " + str(t)
     if DO_MIMIC:
+        ef.clearCount()
         start = time.time()
         MIMICtest()
         t = time.time() -start
         myWriter.addValue(t, "MIMIC_experimentTime", 0)
+        myWriter.addValue(ef.getTotalCalls(),"MIMIC_funcEvals",runNum)
     global runNum
     runNum +=1
 
 def RHC():
     correctCount = 0
-    RHC_iters = 1
+    RHC_iters = 10
     t=0
-    while correctCount <= NUM_RIGHT:
-        global rhc
+    totalTime =0
+    totalIters = 0
+
+    global rhc
+    rhc = RandomizedHillClimbing(hcp)
+    while correctCount < NUM_RIGHT:
         # print str(correctCount)+  " / 20 correct in RHC w/ iters " + str(RHC_iters)
-        rhc = RandomizedHillClimbing(hcp)
         fit = FixedIterationTrainer(rhc, RHC_iters)
         start = time.time()
         fitness = fit.train()
         t = time.time() - start
+        totalIters+=RHC_iters
+        totalTime += t;
         myWriter.addValue(fitness, "RHC_fitness", runNum)
         myWriter.addValue(t, "RHC_searchTimes",runNum)
         v = ef.value(rhc.getOptimal())
@@ -155,22 +171,26 @@ def RHC():
             correctCount += 1
         else:
             correctCount = 0
-            RHC_iters += 1
-    myWriter.addValue(t,"RHC_times",0)
-    myWriter.addValue(int(RHC_iters),"RHC_iters",0)
-    print str(N) + ": RHC: " + str(ef.value(rhc.getOptimal()))+" took "+str(t)+" seconds and " + str(RHC_iters) + " iterations"
+            #RHC_iters += 1
+    myWriter.addValue(totalTime,"RHC_times",runNum)
+    myWriter.addValue(totalIters,"RHC_iters",runNum)
+    print str(N) + ": RHC: " + str(ef.value(rhc.getOptimal()))+" took "+str(totalTime)+" seconds and " + str(totalIters) + " iterations"
 
 def SA():
-    SA_iters = 1
+    SA_iters = 10
     correctCount = 0
     t=0
-    while correctCount <= NUM_RIGHT:
-        global sa
-        sa = SimulatedAnnealing(1e11, .85, hcp)
+    totalTime=0
+    totalIters =0
+    global sa
+    sa = SimulatedAnnealing(1e11, .85, hcp)
+    while correctCount < NUM_RIGHT:
         start = time.time()
         fit = FixedIterationTrainer(sa, SA_iters)
         fitness = fit.train()
         t = time.time() - start
+        totalTime+=t
+        totalIters+= SA_iters
         myWriter.addValue(fitness, "SA_fitness", runNum)
         myWriter.addValue(t, "SA_searchTimes",runNum)
         v = ef.value(sa.getOptimal())
@@ -178,14 +198,15 @@ def SA():
             correctCount += 1
         else:
             correctCount = 0
-            SA_iters += 1
+            #SA_iters += 1
     myWriter.addValue(t,"SA_times",0)
     myWriter.addValue(int(SA_iters),"SA_iters",0)
-    print str(N) + ": SA: " + str(ef.value(sa.getOptimal())) + " took "+str(t)+ " seconds and " + str(SA_iters) + " iterations"
+    print str(N) + ": SA: " + str(ef.value(sa.getOptimal())) + " took "+str(totalIters)+ " seconds and " + str(totalIters) + " iterations"
 
 def GA():
     correctCount = 0
     t=0
+    totalTime = 0
     #GA_iters=1
     attempts = 0
     threshold = .1
@@ -198,10 +219,12 @@ def GA():
         start = time.time()
         fit =ConvergenceTrainer(ga, threshold, NUM_ITERS)  #FixedIterationTrainer(ga, int(GA_iters))
         fitness=fit.train()
+        t = time.time() - start
+        totalTime +=t
         iters += fit.getIterations()
         myWriter.addValue(fitness, "GA_fitness", runNum)
         myWriter.addValue(t, "GA_searchTimes",runNum)
-        t += time.time() - start
+
         v = ef.value(ga.getOptimal())
         if v == N:
             correctCount+= 1
@@ -214,12 +237,13 @@ def GA():
             #GA_iters *= 1.5
            # GA_mut = int(GA_pop * .25)
            #GA_keep = int(GA_pop * .80)
-    myWriter.addValue(t,"GA_times",0)
+    myWriter.addValue(totalTime,"GA_times",0)
     myWriter.addValue(iters,"GA_iters",0)
     myWriter.addValue(int(GA_pop),"GA_pop",0)
     myWriter.addValue(int(GA_mut),"GA_mut",0)
     myWriter.addValue(int(GA_keep),"GA_keep",0)
-    print(str(N) + ": GA: " + str(ef.value(ga.getOptimal())) + " took " + str(t) + " seconds and "
+    myWriter.addValue(threshold,"GA_threshold",0)
+    print(str(N) + ": GA: " + str(ef.value(ga.getOptimal())) + " took " + str(totalTime) + " seconds and "
     + str(iters) + " iters w/ pop " + str(GA_pop) + " mut " + str(GA_mut) + " keep "+ str(GA_keep)+ " for fitness "
     +str(fitness)+ " in " +str(attempts) + " attempts " + " thresh " + str(threshold) )
 
@@ -229,7 +253,7 @@ def MIMICtest():
     MIMIC_samples = 5*N #max(1,int(N/10))
     MIMIC_keep = int(.1 * MIMIC_samples)
     t=0
-    while correctCount <= NUM_RIGHT and MIMIC_iters <= 500:
+    while correctCount < NUM_RIGHT and MIMIC_iters <= 500:
         MIMIC_keep = int( max(.1 * MIMIC_samples, 1))
         mimic = MIMIC(int(MIMIC_samples), int(MIMIC_keep), pop)
         start = time.time()
